@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Layout } from '../components/Layout';
@@ -44,8 +44,14 @@ export function AuthCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const handledRef = useRef(false);
 
   useEffect(() => {
+    if (handledRef.current) {
+      return;
+    }
+    handledRef.current = true;
+
     let cancelled = false;
     const code = searchParams.get('code');
     const next = searchParams.get('next') || '/auth/confirmed';

@@ -22,8 +22,17 @@ function renderBootstrapError(message: string) {
   `;
 }
 
+function isIgnorableBootstrapError(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes('lock "') && normalized.includes('was released because another request stole it');
+}
+
 window.addEventListener('error', (event) => {
-  renderBootstrapError(event.error?.message ?? event.message ?? '알 수 없는 오류가 발생했습니다.');
+  const message = event.error?.message ?? event.message ?? '알 수 없는 오류가 발생했습니다.';
+  if (isIgnorableBootstrapError(message)) {
+    return;
+  }
+  renderBootstrapError(message);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
@@ -33,6 +42,10 @@ window.addEventListener('unhandledrejection', (event) => {
       : typeof event.reason === 'string'
         ? event.reason
         : '비동기 초기화 중 오류가 발생했습니다.';
+  if (isIgnorableBootstrapError(reason)) {
+    event.preventDefault();
+    return;
+  }
   renderBootstrapError(reason);
 });
 
