@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AuthSplash } from '../components/AuthSplash';
 import { useAuth } from '../lib/auth';
 import { supabaseDisabledMessage } from '../lib/supabase';
 import { Button } from '../components/Button';
@@ -110,17 +111,7 @@ export function LoginPage() {
   }
 
   if (loading) {
-    return (
-      <Shell>
-        <AuthCard>
-          <Hero>
-            <Eyebrow>Focused Memorization</Eyebrow>
-            <HeroTitle>GamsaNote</HeroTitle>
-            <HeroText>로그인 상태를 확인하는 중입니다.</HeroText>
-          </Hero>
-        </AuthCard>
-      </Shell>
-    );
+    return <AuthSplash description="로그인 상태와 저장된 세션을 확인하는 중입니다." />;
   }
 
   async function handleSubmit(event: FormEvent) {

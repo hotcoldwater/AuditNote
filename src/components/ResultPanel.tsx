@@ -1,4 +1,5 @@
 import type { ScoringResult, Standard, StudyMode } from '../types';
+import { formatDisplayAnswer } from '../lib/answerFormatting';
 import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -29,9 +30,10 @@ const Body = styled('div', {
   backgroundColor: '$panel',
   borderRadius: '$md',
   padding: '$5',
-  lineHeight: 1.7,
+  lineHeight: 1.9,
   whiteSpace: 'pre-wrap',
   border: '1px solid $borderSoft',
+  wordBreak: 'keep-all',
 });
 
 function badgeTone(score: number) {
@@ -68,6 +70,8 @@ export function ResultPanel({
   onNext: () => void;
   onExit: () => void;
 }) {
+  const formattedAnswer = formatDisplayAnswer(standard.answer);
+
   return (
     <Card css={{ display: 'grid', gap: '$6' }}>
       <div style={{ display: 'grid', gap: 10 }}>
@@ -86,8 +90,8 @@ export function ResultPanel({
 
       <Grid>
         <Section>
-          <Label>정답 원문</Label>
-          <Body>{standard.answer}</Body>
+          <Label>정답 정리본</Label>
+          <Body>{formattedAnswer}</Body>
         </Section>
         <Section>
           <Label>내 답안</Label>
