@@ -13,7 +13,7 @@ const Shell = styled('main', {
   placeItems: 'center',
   padding: '$6 $4',
   background:
-    'radial-gradient(circle at top, rgba(197, 234, 223, 0.55), transparent 26%), linear-gradient(180deg, #fdfcf8 0%, $background 40%, #f4f4f2 100%)',
+    'radial-gradient(circle at top, rgba(200, 220, 255, 0.72), transparent 26%), linear-gradient(180deg, #ffffff 0%, $background 40%, #eef4fd 100%)',
 });
 
 const AuthCard = styled(Card, {

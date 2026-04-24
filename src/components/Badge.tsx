@@ -23,7 +23,7 @@ export const Badge = styled('span', {
       success: {
         backgroundColor: '$successSoft',
         color: '$success',
-        borderColor: 'rgba(39, 93, 70, 0.12)',
+        borderColor: 'rgba(36, 87, 166, 0.12)',
       },
       warning: {
         backgroundColor: '$warningSoft',
@@ -38,7 +38,7 @@ export const Badge = styled('span', {
       primary: {
         backgroundColor: '$primarySoft',
         color: '$primary',
-        borderColor: 'rgba(1, 38, 31, 0.08)',
+        borderColor: 'rgba(23, 61, 122, 0.12)',
       },
     },
   },

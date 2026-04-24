@@ -7,7 +7,7 @@ const Shell = styled('main', {
   placeItems: 'center',
   padding: '$6 $4',
   background:
-    'radial-gradient(circle at 20% 12%, rgba(188, 237, 221, 0.8), transparent 22%), radial-gradient(circle at 82% 18%, rgba(255, 218, 211, 0.48), transparent 18%), linear-gradient(180deg, #fdfcf8 0%, $background 42%, #f4f4f2 100%)',
+    'radial-gradient(circle at 20% 12%, rgba(200, 220, 255, 0.85), transparent 22%), radial-gradient(circle at 82% 18%, rgba(230, 239, 255, 0.9), transparent 18%), linear-gradient(180deg, #ffffff 0%, $background 42%, #eef4fd 100%)',
 });
 
 const SplashCard = styled(Card, {

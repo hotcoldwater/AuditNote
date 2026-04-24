@@ -51,8 +51,8 @@ export function LineChart({
       <Svg viewBox={`0 0 ${width} ${height + 10}`} preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="records-line-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#bceddd" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#bceddd" stopOpacity="0.06" />
+            <stop offset="0%" stopColor="#c8dcff" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#c8dcff" stopOpacity="0.08" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((ratio) => (
@@ -68,10 +68,10 @@ export function LineChart({
           />
         ))}
         <path d={areaPath} fill="url(#records-line-fill)" />
-        <path d={linePath} fill="none" stroke="#1a3c34" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={linePath} fill="none" stroke="#2457a6" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((point) => (
           <g key={`${point.x}-${point.y}`}>
-            <circle cx={point.x} cy={point.y} r="2.7" fill="#faf9f7" stroke="#1a3c34" strokeWidth="1.8" />
+            <circle cx={point.x} cy={point.y} r="2.7" fill="#ffffff" stroke="#2457a6" strokeWidth="1.8" />
           </g>
         ))}
       </Svg>
@@ -79,7 +79,7 @@ export function LineChart({
         {data.map((item) => (
           <div key={item.label} style={{ display: 'grid', gap: 2 }}>
             <span>{item.label}</span>
-            {item.caption ? <strong style={{ color: '#1a3c34', fontSize: 13 }}>{item.caption}</strong> : null}
+            {item.caption ? <strong style={{ color: '#173d7a', fontSize: 13 }}>{item.caption}</strong> : null}
           </div>
         ))}
       </Labels>

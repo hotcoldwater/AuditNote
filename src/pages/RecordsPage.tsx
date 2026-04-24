@@ -28,7 +28,7 @@ const Hero = styled(Card, {
   display: 'grid',
   gap: '$6',
   background:
-    'radial-gradient(circle at top right, rgba(188, 237, 221, 0.6), rgba(188, 237, 221, 0) 28%), $panel',
+    'radial-gradient(circle at top right, rgba(200, 220, 255, 0.72), rgba(200, 220, 255, 0) 28%), $panel',
 });
 
 const HeroTop = styled('div', {
@@ -444,7 +444,15 @@ export function RecordsPage() {
             {stats.partProgress.map((item) => (
               <Panel key={item.partNo}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                  <strong style={{ color: '#01261f', fontFamily: 'Newsreader, serif', fontSize: 20 }}>{item.partNo}편</strong>
+                  <strong
+                    style={{
+                      color: '#173d7a',
+                      fontFamily: '"SUIT Variable", "SUIT", "Pretendard Variable", sans-serif',
+                      fontSize: 20,
+                    }}
+                  >
+                    {item.partNo}편
+                  </strong>
                   <Badge tone={item.wrongRate >= 50 ? 'danger' : item.wrongRate >= 25 ? 'warning' : 'success'}>
                     오답률 {item.wrongRate}%
                   </Badge>

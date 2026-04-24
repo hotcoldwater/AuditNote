@@ -19,7 +19,7 @@ const HeroCard = styled(Card, {
   display: 'grid',
   gap: '$3',
   background:
-    'radial-gradient(circle at top right, rgba(188, 237, 221, 0.78), rgba(188, 237, 221, 0) 32%), linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(244,244,242,0.96) 100%)',
+    'radial-gradient(circle at top right, rgba(200, 220, 255, 0.78), rgba(200, 220, 255, 0) 32%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,246,253,0.98) 100%)',
 });
 
 const Eyebrow = styled('div', {
@@ -262,7 +262,7 @@ export function HomePage() {
                 </ProgressTop>
                 <Track>
                   <Segment css={{ width: `${item.correctRate}%`, backgroundColor: '$success' }} />
-                  <Segment css={{ width: `${item.wrongRate}%`, backgroundColor: '$danger' }} />
+                  <Segment css={{ width: `${item.wrongRate}%`, backgroundColor: '$secondarySoft' }} />
                 </Track>
               </ProgressRow>
             ))}

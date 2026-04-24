@@ -79,7 +79,15 @@ export function ResultPanel({
           <Badge tone={badgeTone(result.score) as 'success' | 'primary' | 'warning' | 'danger'}>
             {result.resultStatus}
           </Badge>
-          <strong style={{ fontSize: 32, fontFamily: 'Newsreader, Noto Serif KR, serif', color: '#01261f' }}>{result.score}점</strong>
+          <strong
+            style={{
+              fontSize: 32,
+              fontFamily: '"SUIT Variable", "SUIT", "Pretendard Variable", sans-serif',
+              color: '#173d7a',
+            }}
+          >
+            {result.score}점
+          </strong>
         </div>
         <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{result.feedbackMessage}</span>
       </div>
