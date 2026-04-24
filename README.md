@@ -50,11 +50,11 @@ npm run preview
 
 ```env
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
 - `VITE_SUPABASE_URL`: 브라우저 앱에서 사용하는 Supabase URL
-- `VITE_SUPABASE_ANON_KEY`: 브라우저 앱에서 사용하는 anon key
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: 브라우저 앱에서 사용하는 publishable key
 
 `scripts/importStandards.ts`를 사용할 때만 추가로 아래 값을 로컬 셸 또는 별도 `.env`에 넣습니다.
 
@@ -70,7 +70,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 2. [supabase/schema.sql](./supabase/schema.sql)을 SQL Editor에서 실행합니다.
 3. Authentication에서 Email provider를 켭니다.
 4. Site URL / Redirect URL을 로컬 및 배포 도메인에 맞게 설정합니다.
-5. `.env`에 URL, anon key, service role key를 넣습니다.
+5. `.env`에 URL, publishable key, service role key를 넣습니다.
 
 ## schema.sql 적용
 
@@ -136,7 +136,7 @@ SPA 라우팅을 위해 `public/_redirects`가 포함되어 있습니다.
 
 1. GitHub 저장소를 Cloudflare Pages에 연결합니다.
 2. Framework preset은 Vite 또는 None으로 두고 build 설정만 위 값으로 지정합니다.
-3. Environment Variables에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 넣습니다.
+3. Environment Variables에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`를 넣습니다.
 4. 배포 후 Supabase Auth Redirect URL에 Pages 도메인을 추가합니다.
 
 ## MVP에서 제외한 기능
