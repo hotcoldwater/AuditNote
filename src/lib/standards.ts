@@ -8,6 +8,15 @@ export interface StandardsPayload {
   notice?: string;
 }
 
+function withTimeout(promise: PromiseLike<any>, timeoutMs: number): Promise<any> {
+  return Promise.race<any>([
+    Promise.resolve(promise),
+    new Promise<any>((_, reject) => {
+      window.setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), timeoutMs);
+    }),
+  ]);
+}
+
 function normalizeStandard(standard: Partial<Standard>): Standard {
   return {
     id: standard.id ?? '',
@@ -57,18 +66,21 @@ export async function fetchActiveStandards(partNo?: number | null): Promise<Stan
       query = query.eq('part_no', partNo);
     }
 
-    const { data, error } = await query.order('part_no').order('level').order('title');
+    const { data, error } = await withTimeout(query.order('part_no').order('level').order('title'), 8000);
 
     if (error || !data || data.length === 0) {
       return fallbackStandards(partNo);
     }
 
     return {
-      standards: data.map((item) => normalizeStandard(item as Standard)),
+      standards: data.map((item: Standard) => normalizeStandard(item)),
       source: 'supabase',
     };
   } catch {
-    return fallbackStandards(partNo);
+    return {
+      ...fallbackStandards(partNo),
+      notice: 'Supabase 응답이 지연되어 샘플 기준서로 표시합니다.',
+    };
   }
 }
 

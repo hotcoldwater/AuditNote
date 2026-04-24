@@ -2,6 +2,15 @@ import type { WrongNote } from '../types';
 import { getLocalWrongNotes, localStoreKeys, mergeLocalByUser } from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
+function withTimeout(promise: PromiseLike<any>, timeoutMs: number): Promise<any> {
+  return Promise.race<any>([
+    Promise.resolve(promise),
+    new Promise<any>((_, reject) => {
+      window.setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), timeoutMs);
+    }),
+  ]);
+}
+
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `wn-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -23,7 +32,7 @@ export async function listWrongNotes(userId: string, includeResolved = false): P
       query = query.eq('is_resolved', false);
     }
 
-    const { data, error } = await query.order('updated_at', { ascending: false });
+    const { data, error } = await withTimeout(query.order('updated_at', { ascending: false }), 8000);
 
     if (error) {
       throw error;
@@ -108,11 +117,14 @@ export async function upsertWrongNote(
           last_attempted_at: now,
         };
 
-    const { data, error } = await supabase
-      .from('wrong_notes')
-      .upsert(payload, { onConflict: 'user_id,standard_id' })
-      .select()
-      .single();
+    const { data, error } = await withTimeout(
+      supabase
+        .from('wrong_notes')
+        .upsert(payload, { onConflict: 'user_id,standard_id' })
+        .select()
+        .single(),
+      8000,
+    );
 
     if (error) {
       throw error;
@@ -162,11 +174,14 @@ export async function resolveWrongNote(userId: string, standardId: string) {
   }
 
   try {
-    const { error } = await supabase
-      .from('wrong_notes')
-      .update({ is_resolved: true, updated_at: now })
-      .eq('user_id', userId)
-      .eq('standard_id', standardId);
+    const { error } = await withTimeout(
+      supabase
+        .from('wrong_notes')
+        .update({ is_resolved: true, updated_at: now })
+        .eq('user_id', userId)
+        .eq('standard_id', standardId),
+      8000,
+    );
 
     if (error) {
       throw error;

@@ -56,7 +56,7 @@ export function SessionPlayer({
   partNo?: number | null;
   preferredStandardId?: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | undefined>();
@@ -67,6 +67,7 @@ export function SessionPlayer({
 
   async function loadQuestion(excludeStandardId?: string | null) {
     if (!user) {
+      setLoading(false);
       return;
     }
 
@@ -92,14 +93,24 @@ export function SessionPlayer({
         setNotice(standardsPayload.notice);
         setCurrent(pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId));
       }
+    } catch {
+      setCurrent(null);
+      setNotice('문제 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
     void loadQuestion();
-  }, [mode, partNo, preferredStandardId, user?.id]);
+  }, [authLoading, mode, partNo, preferredStandardId, user?.id]);
+
+  if (authLoading) {
+    return <Card>사용자 정보를 확인하는 중...</Card>;
+  }
 
   async function submitAnswer(submittedAnswer: string) {
     if (!user || !current) {

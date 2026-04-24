@@ -3,6 +3,15 @@ import { getLocalAttempts, getLocalStats, localStoreKeys, mergeLocalByUser } fro
 import { isSupabaseConfigured, supabase } from './supabase';
 import { upsertWrongNote } from './wrongNotes';
 
+function withTimeout(promise: PromiseLike<any>, timeoutMs: number): Promise<any> {
+  return Promise.race<any>([
+    Promise.resolve(promise),
+    new Promise<any>((_, reject) => {
+      window.setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), timeoutMs);
+    }),
+  ]);
+}
+
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `at-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -78,11 +87,10 @@ export async function listStudyAttempts(userId: string): Promise<StudyAttempt[]>
   }
 
   try {
-    const { data, error } = await supabase
-      .from('study_attempts')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await withTimeout(
+      supabase.from('study_attempts').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      8000,
+    );
 
     if (error) {
       throw error;
@@ -100,7 +108,7 @@ export async function listUserStandardStats(userId: string): Promise<UserStandar
   }
 
   try {
-    const { data, error } = await supabase.from('user_standard_stats').select('*').eq('user_id', userId);
+    const { data, error } = await withTimeout(supabase.from('user_standard_stats').select('*').eq('user_id', userId), 8000);
     if (error) {
       throw error;
     }
@@ -142,36 +150,43 @@ export async function recordStudyOutcome(
   }
 
   try {
-    const { data: currentStatsRow } = await supabase
-      .from('user_standard_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('standard_id', standard.id)
-      .maybeSingle();
+    const { data: currentStatsRow } = await withTimeout(
+      supabase
+        .from('user_standard_stats')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('standard_id', standard.id)
+        .maybeSingle(),
+      8000,
+    );
 
     const nextStat = buildNextStats(userId, standard.id, currentStatsRow as UserStandardStats | undefined, scoring);
 
-    const { error: attemptError } = await supabase.from('study_attempts').insert({
-      user_id: attempt.user_id,
-      standard_id: attempt.standard_id,
-      mode: attempt.mode,
-      user_answer: attempt.user_answer,
-      score: attempt.score,
-      result_status: attempt.result_status,
-      included_required_keywords: attempt.included_required_keywords,
-      missing_required_keywords: attempt.missing_required_keywords,
-      included_optional_keywords: attempt.included_optional_keywords,
-      answer_length_ratio: attempt.answer_length_ratio,
-      similarity_score: attempt.similarity_score,
-    });
+    const { error: attemptError } = await withTimeout(
+      supabase.from('study_attempts').insert({
+        user_id: attempt.user_id,
+        standard_id: attempt.standard_id,
+        mode: attempt.mode,
+        user_answer: attempt.user_answer,
+        score: attempt.score,
+        result_status: attempt.result_status,
+        included_required_keywords: attempt.included_required_keywords,
+        missing_required_keywords: attempt.missing_required_keywords,
+        included_optional_keywords: attempt.included_optional_keywords,
+        answer_length_ratio: attempt.answer_length_ratio,
+        similarity_score: attempt.similarity_score,
+      }),
+      8000,
+    );
 
     if (attemptError) {
       throw attemptError;
     }
 
-    const { error: statsError } = await supabase
-      .from('user_standard_stats')
-      .upsert(nextStat, { onConflict: 'user_id,standard_id' });
+    const { error: statsError } = await withTimeout(
+      supabase.from('user_standard_stats').upsert(nextStat, { onConflict: 'user_id,standard_id' }),
+      8000,
+    );
 
     if (statsError) {
       throw statsError;
