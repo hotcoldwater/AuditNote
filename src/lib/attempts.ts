@@ -1,4 +1,12 @@
-import type { ScoringResult, Standard, StudyAttempt, StudyMode, UserStandardStats, WrongNote } from '../types';
+import type {
+  GradingMetadata,
+  ScoringResult,
+  Standard,
+  StudyAttempt,
+  StudyMode,
+  UserStandardStats,
+  WrongNote,
+} from '../types';
 import {
   getLocalAttempts,
   getLocalStats,
@@ -30,6 +38,7 @@ function buildAttempt(
   mode: StudyMode,
   userAnswer: string,
   scoring: ScoringResult,
+  gradingMetadata: GradingMetadata,
 ): StudyAttempt {
   return {
     id: createId(),
@@ -39,11 +48,11 @@ function buildAttempt(
     user_answer: userAnswer,
     score: scoring.score,
     result_status: scoring.resultStatus,
-    included_required_keywords: scoring.includedRequiredKeywords,
-    missing_required_keywords: scoring.missingRequiredKeywords,
-    included_optional_keywords: scoring.includedOptionalKeywords,
-    answer_length_ratio: Number(scoring.answerLengthRatio.toFixed(2)),
-    similarity_score: scoring.similarityScore,
+    grading_method: gradingMetadata.gradingMethod,
+    grading_model: gradingMetadata.gradingModel,
+    ai_reason: scoring.reason,
+    should_add_wrong_note: scoring.shouldAddWrongNote,
+    raw_grading_result: gradingMetadata.rawGradingResult,
     created_at: new Date().toISOString(),
   };
 }
@@ -196,6 +205,47 @@ function persistLocalWrongNote(userId: string, nextNote: WrongNote) {
   );
 }
 
+async function insertStudyAttemptWithFallback(attempt: StudyAttempt) {
+  if (!supabase) {
+    return { error: null };
+  }
+
+  const nextPayload = {
+    user_id: attempt.user_id,
+    standard_id: attempt.standard_id,
+    mode: attempt.mode,
+    user_answer: attempt.user_answer,
+    score: attempt.score,
+    result_status: attempt.result_status,
+    grading_method: attempt.grading_method,
+    grading_model: attempt.grading_model,
+    ai_reason: attempt.ai_reason,
+    should_add_wrong_note: attempt.should_add_wrong_note,
+    raw_grading_result: attempt.raw_grading_result,
+  };
+
+  const nextInsert = await withTimeout(
+    supabase.from('study_attempts').insert(nextPayload),
+    SUPABASE_TIMEOUT_MS,
+  );
+
+  if (!nextInsert.error) {
+    return nextInsert;
+  }
+
+  return withTimeout(
+    supabase.from('study_attempts').insert({
+      user_id: attempt.user_id,
+      standard_id: attempt.standard_id,
+      mode: attempt.mode,
+      user_answer: attempt.user_answer,
+      score: attempt.score,
+      result_status: attempt.result_status,
+    }),
+    SUPABASE_TIMEOUT_MS,
+  );
+}
+
 async function syncDerivedDataForStandard(
   userId: string,
   standardId: string,
@@ -277,8 +327,9 @@ export async function recordStudyOutcome(
   userAnswer: string,
   scoring: ScoringResult,
   mode: StudyMode,
+  gradingMetadata: GradingMetadata,
 ) {
-  const attempt = buildAttempt(userId, standard.id, mode, userAnswer, scoring);
+  const attempt = buildAttempt(userId, standard.id, mode, userAnswer, scoring, gradingMetadata);
   let notice: string | undefined;
 
   const localPersist = async (message: string) => {
@@ -286,8 +337,8 @@ export async function recordStudyOutcome(
     const nextStat = buildNextStats(userId, standard.id, currentStats, scoring);
     persistLocalAttempt(userId, attempt);
     persistLocalStats(userId, nextStat);
-    if (scoring.score < 60) {
-      await upsertWrongNote(userId, standard.id, 'AUTO', '60점 미만 자동 등록');
+    if (scoring.shouldAddWrongNote) {
+      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI 채점 결과에 따른 자동 등록');
     }
     notice = message;
     return { attempt, stats: nextStat, notice };
@@ -310,22 +361,7 @@ export async function recordStudyOutcome(
 
     const nextStat = buildNextStats(userId, standard.id, currentStatsRow as UserStandardStats | undefined, scoring);
 
-    const { error: attemptError } = await withTimeout(
-      supabase.from('study_attempts').insert({
-        user_id: attempt.user_id,
-        standard_id: attempt.standard_id,
-        mode: attempt.mode,
-        user_answer: attempt.user_answer,
-        score: attempt.score,
-        result_status: attempt.result_status,
-        included_required_keywords: attempt.included_required_keywords,
-        missing_required_keywords: attempt.missing_required_keywords,
-        included_optional_keywords: attempt.included_optional_keywords,
-        answer_length_ratio: attempt.answer_length_ratio,
-        similarity_score: attempt.similarity_score,
-      }),
-      SUPABASE_TIMEOUT_MS,
-    );
+    const { error: attemptError } = await insertStudyAttemptWithFallback(attempt);
 
     if (attemptError) {
       throw attemptError;
@@ -340,8 +376,8 @@ export async function recordStudyOutcome(
       throw statsError;
     }
 
-    if (scoring.score < 60) {
-      await upsertWrongNote(userId, standard.id, 'AUTO', '60점 미만 자동 등록');
+    if (scoring.shouldAddWrongNote) {
+      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI 채점 결과에 따른 자동 등록');
     }
 
     return { attempt, stats: nextStat, notice };

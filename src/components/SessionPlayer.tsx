@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { gradeAnswer } from '../lib/aiGrading';
 import { recordStudyOutcome, loadUserStandardStatsMap } from '../lib/attempts';
 import { useAuth } from '../lib/auth';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
-import { scoreAnswer } from '../lib/scoring';
 import { fetchActiveStandards } from '../lib/standards';
-import { manuallyAddWrongNote, listWrongNotes, resolveWrongNote } from '../lib/wrongNotes';
+import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
 import type { ScoringResult, Standard, StudyMode } from '../types';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -80,10 +80,11 @@ export function SessionPlayer({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | undefined>();
+  const [submitNotice, setSubmitNotice] = useState<string | undefined>();
   const [current, setCurrent] = useState<Standard | null>(null);
   const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<ScoringResult | null>(null);
-  const [persistenceNotice, setPersistenceNotice] = useState<string | undefined>();
+  const [submitting, setSubmitting] = useState(false);
 
   async function loadQuestion(excludeStandardId?: string | null) {
     if (!user) {
@@ -94,7 +95,7 @@ export function SessionPlayer({
     setLoading(true);
     setResult(null);
     setAnswer('');
-    setPersistenceNotice(undefined);
+    setSubmitNotice(undefined);
 
     try {
       if (mode === 'WRONG_NOTE') {
@@ -133,19 +134,28 @@ export function SessionPlayer({
   }
 
   async function submitAnswer(submittedAnswer: string) {
-    if (!user || !current) {
+    if (!user || !current || submitting) {
       return;
     }
 
-    const scoring = scoreAnswer(
-      submittedAnswer,
-      current.answer,
-      current.required_keywords,
-      current.optional_keywords,
-    );
-    const saved = await recordStudyOutcome(user.id, current, submittedAnswer, scoring, mode);
-    setResult(scoring);
-    setPersistenceNotice(saved.notice);
+    setSubmitting(true);
+    setSubmitNotice(undefined);
+
+    try {
+      const { result: scoring, metadata } = await gradeAnswer({
+        title: current.title,
+        correctAnswer: current.answer,
+        userAnswer: submittedAnswer,
+      });
+
+      const outcome = await recordStudyOutcome(user.id, current, submittedAnswer, scoring, mode, metadata);
+      setResult(scoring);
+      setSubmitNotice(outcome.notice);
+    } catch {
+      setSubmitNotice('AI 채점에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleSkip() {
@@ -163,16 +173,6 @@ export function SessionPlayer({
     }
 
     await manuallyAddWrongNote(user.id, current.id);
-    setPersistenceNotice((prev) => prev ?? '오답노트에 추가했습니다.');
-  }
-
-  async function handleResolveWrongNote() {
-    if (!user || !current) {
-      return;
-    }
-
-    await resolveWrongNote(user.id, current.id);
-    setPersistenceNotice('오답노트에서 제거했습니다.');
   }
 
   if (loading) {
@@ -193,6 +193,7 @@ export function SessionPlayer({
   return (
     <Stack>
       {notice ? <Notice>{notice}</Notice> : null}
+      {submitNotice ? <Notice>{submitNotice}</Notice> : null}
       <QuestionCard>
         <Meta>
           <Badge tone="primary">{modeLabel(mode, current.part_no ?? partNo)}</Badge>
@@ -215,19 +216,19 @@ export function SessionPlayer({
             placeholder="기억나는 문구를 최대한 그대로 적어보세요."
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
-            disabled={Boolean(result)}
+            disabled={Boolean(result) || submitting}
           />
         </div>
 
         {!result ? (
           <div style={{ display: 'grid', gap: 12 }}>
-            <Button onClick={() => void submitAnswer(answer)} disabled={!current}>
-              제출
+            <Button onClick={() => void submitAnswer(answer)} disabled={!current || submitting}>
+              {submitting ? '채점 중...' : '제출'}
             </Button>
-            <Button tone="ghost" onClick={() => void handleSkip()}>
+            <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
               모르겠어요
             </Button>
-            <Button tone="secondary" onClick={() => navigate('/')}>
+            <Button tone="secondary" onClick={() => navigate('/')} disabled={submitting}>
               학습 종료
             </Button>
           </div>
@@ -239,10 +240,7 @@ export function SessionPlayer({
           standard={current}
           userAnswer={answer}
           result={result}
-          mode={mode}
-          persistenceNotice={persistenceNotice}
           onAddWrongNote={handleManualWrongNote}
-          onResolveWrongNote={mode === 'WRONG_NOTE' ? handleResolveWrongNote : undefined}
           onNext={() => void loadQuestion(current.id)}
           onExit={() => navigate('/')}
         />

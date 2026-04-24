@@ -49,6 +49,11 @@ create table if not exists public.study_attempts (
   user_answer text,
   score numeric not null,
   result_status text not null,
+  grading_method text,
+  grading_model text,
+  ai_reason text,
+  should_add_wrong_note boolean,
+  raw_grading_result jsonb,
   included_required_keywords text[] not null default '{}',
   missing_required_keywords text[] not null default '{}',
   included_optional_keywords text[] not null default '{}',
@@ -56,6 +61,12 @@ create table if not exists public.study_attempts (
   similarity_score numeric,
   created_at timestamptz not null default now()
 );
+
+alter table public.study_attempts add column if not exists grading_method text;
+alter table public.study_attempts add column if not exists grading_model text;
+alter table public.study_attempts add column if not exists ai_reason text;
+alter table public.study_attempts add column if not exists should_add_wrong_note boolean;
+alter table public.study_attempts add column if not exists raw_grading_result jsonb;
 
 create table if not exists public.user_standard_stats (
   user_id uuid not null references auth.users(id) on delete cascade,

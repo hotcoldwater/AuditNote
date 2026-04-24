@@ -36,11 +36,16 @@ export interface StudyAttempt {
   user_answer: string;
   score: number;
   result_status: ResultStatus;
-  included_required_keywords: string[];
-  missing_required_keywords: string[];
-  included_optional_keywords: string[];
-  answer_length_ratio: number;
-  similarity_score: number;
+  grading_method?: string | null;
+  grading_model?: string | null;
+  ai_reason?: string | null;
+  should_add_wrong_note?: boolean | null;
+  raw_grading_result?: Record<string, unknown> | null;
+  included_required_keywords?: string[];
+  missing_required_keywords?: string[];
+  included_optional_keywords?: string[];
+  answer_length_ratio?: number | null;
+  similarity_score?: number | null;
   created_at: string;
 }
 
@@ -76,12 +81,14 @@ export interface WrongNote {
 export interface ScoringResult {
   score: number;
   resultStatus: ResultStatus;
-  includedRequiredKeywords: string[];
-  missingRequiredKeywords: string[];
-  includedOptionalKeywords: string[];
-  answerLengthRatio: number;
-  similarityScore: number;
-  feedbackMessage: string;
+  reason: string;
+  shouldAddWrongNote: boolean;
+}
+
+export interface GradingMetadata {
+  gradingMethod: string;
+  gradingModel: string | null;
+  rawGradingResult: Record<string, unknown> | null;
 }
 
 export interface AuthUser {
