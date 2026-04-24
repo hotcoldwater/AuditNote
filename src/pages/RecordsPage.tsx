@@ -447,7 +447,8 @@ export function RecordsPage() {
                   <strong
                     style={{
                       color: '#173d7a',
-                      fontFamily: '"SUIT Variable", "SUIT", "Pretendard Variable", sans-serif',
+                      fontFamily:
+                        '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
                       fontSize: 20,
                     }}
                   >

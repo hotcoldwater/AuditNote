@@ -32,7 +32,7 @@ export const { styled, css, globalCss, theme } = createStitches({
       body:
         '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
       heading:
-        '"SUIT Variable", "SUIT", "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
+        '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
       mono: '"SFMono-Regular", Consolas, monospace',
     },
     radii: {

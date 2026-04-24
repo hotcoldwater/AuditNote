@@ -29,39 +29,38 @@ const Title = styled('h2', {
 
 const LocationBlock = styled('div', {
   display: 'grid',
-  gap: '$1',
+  gap: '$2',
   padding: '$5',
   borderRadius: '$xl',
   background:
-    'linear-gradient(180deg, rgba(236, 243, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%)',
+    'linear-gradient(180deg, rgba(240, 246, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%)',
   border: '1px solid rgba(112, 146, 214, 0.16)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75)',
 });
 
 const PartLine = styled('div', {
-  color: '$subtleText',
-  fontSize: '$2',
-  lineHeight: 1.6,
+  color: '$primary',
+  fontSize: '$4',
+  lineHeight: 1.3,
   fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
+  letterSpacing: '-0.02em',
 });
 
 const ChapterLine = styled('div', {
-  color: '$primary',
-  fontSize: '$4',
-  lineHeight: 1.35,
+  color: '$accent',
+  fontSize: '$3',
+  lineHeight: 1.4,
   fontWeight: 700,
   letterSpacing: '-0.02em',
 });
 
 const SectionLine = styled('div', {
-  color: '$accent',
-  fontSize: '$3',
-  lineHeight: 1.5,
+  color: '$mutedText',
+  fontSize: '$2',
+  lineHeight: 1.6,
   fontWeight: 700,
   paddingLeft: '$4',
-  borderLeft: '2px solid rgba(112, 146, 214, 0.28)',
+  borderLeft: '2px solid rgba(112, 146, 214, 0.22)',
 });
 
 const Notice = styled('div', {
@@ -73,6 +72,9 @@ const Notice = styled('div', {
 const QuestionCard = styled(Card, {
   display: 'grid',
   gap: '$6',
+  '&::before': {
+    display: 'none',
+  },
 });
 
 const MetaSection = styled('section', {
@@ -170,8 +172,8 @@ export function SessionPlayer({
       const outcome = await recordStudyOutcome(user.id, current, submittedAnswer, scoring, mode, metadata);
       setResult(scoring);
       setSubmitNotice(outcome.notice);
-    } catch {
-      setSubmitNotice('AI 채점에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } catch (error) {
+      setSubmitNotice(error instanceof Error ? error.message : 'AI 채점에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
     }

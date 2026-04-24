@@ -90,7 +90,7 @@ export function ResultPanel({
           <strong
             style={{
               fontSize: 32,
-              fontFamily: '"SUIT Variable", "SUIT", "Pretendard Variable", sans-serif',
+              fontFamily: '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
               color: '#173d7a',
             }}
           >

@@ -95,6 +95,19 @@ function normalizeAuthErrorMessage(message: string | null | undefined) {
     return '이미 가입된 이메일입니다. 로그인하거나 비밀번호 재설정을 진행해 주세요.';
   }
 
+  if (
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror') ||
+    lower.includes('network request failed') ||
+    lower.includes('load failed')
+  ) {
+    return 'Supabase 인증 서버에 연결하지 못했습니다. 배포 환경변수와 auditnote.cc 도메인의 Supabase Redirect URL 설정을 확인해 주세요.';
+  }
+
+  if (lower.includes('invalid flow state') || lower.includes('flow state')) {
+    return '인증 상태가 올바르지 않습니다. auditnote.cc 도메인이 Supabase Redirect URL에 등록되어 있는지 확인해 주세요.';
+  }
+
   return normalized;
 }
 
