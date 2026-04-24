@@ -201,6 +201,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           password,
           options: {
             data: { nickname },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/confirmed`,
           },
         });
 
