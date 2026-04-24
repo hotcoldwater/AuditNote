@@ -7,7 +7,7 @@ export function WrongPlayPage() {
   const standardId = searchParams.get('standardId');
 
   return (
-    <Layout title="오답 학습" description="오답노트의 unresolved 문제만 다시 풉니다.">
+    <Layout title="오답노트">
       <SessionPlayer mode="WRONG_NOTE" preferredStandardId={standardId} />
     </Layout>
   );

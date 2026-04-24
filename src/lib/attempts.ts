@@ -74,12 +74,19 @@ function zeroStat(userId: string, standardId: string): UserStandardStats {
     last_result_status: null,
     consecutive_correct_count: 0,
     consecutive_wrong_count: 0,
+    last_user_answer: null,
     last_attempted_at: null,
     updated_at: new Date().toISOString(),
   };
 }
 
-function buildNextStats(userId: string, standardId: string, current: UserStandardStats | undefined, scoring: ScoringResult) {
+function buildNextStats(
+  userId: string,
+  standardId: string,
+  current: UserStandardStats | undefined,
+  scoring: ScoringResult,
+  userAnswer: string,
+) {
   const now = new Date().toISOString();
   const isCorrect = scoring.resultStatus === 'CORRECT' || scoring.resultStatus === 'EXCELLENT';
   const isWrong = scoring.resultStatus === 'WRONG';
@@ -101,6 +108,7 @@ function buildNextStats(userId: string, standardId: string, current: UserStandar
       scoring.resultStatus === 'WRONG' || scoring.resultStatus === 'SKIPPED'
         ? (current?.consecutive_wrong_count ?? 0) + 1
         : 0,
+    last_user_answer: userAnswer.trim() || null,
     last_attempted_at: now,
     updated_at: now,
   } satisfies UserStandardStats;
@@ -144,6 +152,7 @@ function buildDerivedStats(userId: string, standardId: string, attempts: StudyAt
     last_result_status: latest.result_status,
     consecutive_correct_count: consecutiveCorrectCount,
     consecutive_wrong_count: consecutiveWrongCount,
+    last_user_answer: latest.user_answer?.trim() || null,
     last_attempted_at: latest.created_at,
     updated_at: new Date().toISOString(),
   };
@@ -334,7 +343,7 @@ export async function recordStudyOutcome(
 
   const localPersist = async (message: string) => {
     const currentStats = getLocalStats(userId).find((item) => item.standard_id === standard.id);
-    const nextStat = buildNextStats(userId, standard.id, currentStats, scoring);
+    const nextStat = buildNextStats(userId, standard.id, currentStats, scoring, userAnswer);
     persistLocalAttempt(userId, attempt);
     persistLocalStats(userId, nextStat);
     if (scoring.shouldAddWrongNote) {
@@ -359,7 +368,13 @@ export async function recordStudyOutcome(
       SUPABASE_TIMEOUT_MS,
     );
 
-    const nextStat = buildNextStats(userId, standard.id, currentStatsRow as UserStandardStats | undefined, scoring);
+    const nextStat = buildNextStats(
+      userId,
+      standard.id,
+      currentStatsRow as UserStandardStats | undefined,
+      scoring,
+      userAnswer,
+    );
 
     const { error: attemptError } = await insertStudyAttemptWithFallback(attempt);
 

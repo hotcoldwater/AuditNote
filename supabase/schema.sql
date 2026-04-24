@@ -80,10 +80,13 @@ create table if not exists public.user_standard_stats (
   last_result_status text,
   consecutive_correct_count integer not null default 0,
   consecutive_wrong_count integer not null default 0,
+  last_user_answer text,
   last_attempted_at timestamptz,
   updated_at timestamptz not null default now(),
   primary key (user_id, standard_id)
 );
+
+alter table public.user_standard_stats add column if not exists last_user_answer text;
 
 create table if not exists public.wrong_notes (
   id uuid primary key default gen_random_uuid(),

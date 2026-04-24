@@ -130,7 +130,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!isSupabaseConfigured || !supabase) {
           const demoUser: AuthUser = {
             id: 'demo-user',
-            email: email || 'demo@gamsanote.local',
+            email: email || 'demo@auditnote.local',
             nickname: email.split('@')[0] || '샘플사용자',
             isDemo: true,
           };
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!isSupabaseConfigured || !supabase) {
           const demoUser: AuthUser = {
             id: 'demo-user',
-            email: email || 'demo@gamsanote.local',
+            email: email || 'demo@auditnote.local',
             nickname: nickname || email.split('@')[0] || '샘플사용자',
             isDemo: true,
           };

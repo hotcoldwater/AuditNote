@@ -76,6 +76,91 @@ function extractOutputText(payload) {
   return '';
 }
 
+function stripBulletPrefix(value) {
+  return value.replace(/^\s*(?:\d+\)|\d+\.\s*|[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮㉠㉡㉢㉣㉤㉥㉦㉧]|[-*])\s*/u, '').trim();
+}
+
+function splitIntoUnits(value) {
+  return String(value ?? '')
+    .replace(/\\n/g, '\n')
+    .split(/\r?\n+/)
+    .map((line) => stripBulletPrefix(line))
+    .filter(Boolean);
+}
+
+function splitIntoSentences(value) {
+  const units = splitIntoUnits(value);
+  if (units.length > 1) {
+    return units;
+  }
+
+  return String(value ?? '')
+    .replace(/\\n/g, ' ')
+    .split(/(?<=[.!?다요])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
+function tokenize(value) {
+  return Array.from(
+    new Set(
+      String(value ?? '')
+        .toLowerCase()
+        .replace(/[^0-9a-zA-Z가-힣\s]/g, ' ')
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter((token) => token.length >= 2),
+    ),
+  );
+}
+
+function sentenceSimilarity(expected, actual) {
+  const expectedTokens = tokenize(expected);
+  const actualTokens = tokenize(actual);
+
+  if (expectedTokens.length === 0 || actualTokens.length === 0) {
+    return 0;
+  }
+
+  const actualSet = new Set(actualTokens);
+  const overlap = expectedTokens.filter((token) => actualSet.has(token)).length;
+  const coverage = overlap / expectedTokens.length;
+  const density = overlap / Math.max(actualTokens.length, 1);
+  const contains = actual.includes(expected) || expected.includes(actual) ? 0.15 : 0;
+
+  return Math.max(0, Math.min(1, coverage * 0.8 + density * 0.2 + contains));
+}
+
+function computeSentenceScore(correctAnswer, userAnswer) {
+  const expectedSentences = splitIntoSentences(correctAnswer);
+  const userSentences = splitIntoSentences(userAnswer);
+
+  if (expectedSentences.length === 0 || userSentences.length === 0) {
+    return 0;
+  }
+
+  const unitScore = 100 / expectedSentences.length;
+  const matches = expectedSentences.map((expected) =>
+    userSentences.reduce((best, candidate) => Math.max(best, sentenceSimilarity(expected, candidate)), 0),
+  );
+
+  const baseScore = matches.reduce((total, similarity) => total + unitScore * similarity, 0);
+  const perfectish = matches.every((similarity) => similarity >= 0.72);
+  const solid = matches.every((similarity) => similarity >= 0.58);
+  const bonus = perfectish ? 12 : solid ? 6 : 0;
+
+  return Math.max(0, Math.min(100, Math.round(baseScore + bonus)));
+}
+
+function blendScore(aiScore, correctAnswer, userAnswer) {
+  const sentenceScore = computeSentenceScore(correctAnswer, userAnswer);
+  if (!sentenceScore) {
+    return clampScore(aiScore);
+  }
+
+  return clampScore(aiScore * 0.55 + sentenceScore * 0.45);
+}
+
 export async function onRequestPost(context) {
   let payload;
 
@@ -170,7 +255,7 @@ export async function onRequestPost(context) {
         text: {
           format: {
             type: 'json_schema',
-            name: 'gamsanote_grading',
+            name: 'auditnote_grading',
             strict: true,
             schema,
           },
@@ -209,7 +294,10 @@ export async function onRequestPost(context) {
     return json({ error: 'OpenAI JSON 응답을 해석하지 못했습니다.' }, { status: 502 });
   }
 
-  const result = normalizeResult(parsedResult);
+  const result = normalizeResult({
+    ...parsedResult,
+    score: blendScore(parsedResult?.score, correctAnswer, userAnswer),
+  });
 
   return json({
     result,

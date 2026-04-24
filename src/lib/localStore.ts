@@ -1,9 +1,14 @@
 import type { AuthUser, StudyAttempt, UserStandardStats, WrongNote } from '../types';
 
-const DEMO_USER_KEY = 'gamsanote:demo-user';
-const ATTEMPTS_KEY = 'gamsanote:attempts';
-const STATS_KEY = 'gamsanote:stats';
-const WRONG_NOTES_KEY = 'gamsanote:wrong-notes';
+const DEMO_USER_KEY = 'auditnote:demo-user';
+const ATTEMPTS_KEY = 'auditnote:attempts';
+const STATS_KEY = 'auditnote:stats';
+const WRONG_NOTES_KEY = 'auditnote:wrong-notes';
+
+const LEGACY_DEMO_USER_KEY = 'gamsanote:demo-user';
+const LEGACY_ATTEMPTS_KEY = 'gamsanote:attempts';
+const LEGACY_STATS_KEY = 'gamsanote:stats';
+const LEGACY_WRONG_NOTES_KEY = 'gamsanote:wrong-notes';
 
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -22,6 +27,14 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
+function readJsonWithLegacyFallback<T>(key: string, legacyKey: string, fallback: T): T {
+  const current = readJson<T | null>(key, null);
+  if (current !== null) {
+    return current;
+  }
+  return readJson<T>(legacyKey, fallback);
+}
+
 function writeJson<T>(key: string, value: T) {
   if (!canUseStorage()) {
     return;
@@ -30,8 +43,23 @@ function writeJson<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getLegacyKey(key: string) {
+  switch (key) {
+    case DEMO_USER_KEY:
+      return LEGACY_DEMO_USER_KEY;
+    case ATTEMPTS_KEY:
+      return LEGACY_ATTEMPTS_KEY;
+    case STATS_KEY:
+      return LEGACY_STATS_KEY;
+    case WRONG_NOTES_KEY:
+      return LEGACY_WRONG_NOTES_KEY;
+    default:
+      return '';
+  }
+}
+
 export function getDemoUser() {
-  return readJson<AuthUser | null>(DEMO_USER_KEY, null);
+  return readJsonWithLegacyFallback<AuthUser | null>(DEMO_USER_KEY, LEGACY_DEMO_USER_KEY, null);
 }
 
 export function setDemoUser(user: AuthUser | null) {
@@ -48,7 +76,9 @@ export function setDemoUser(user: AuthUser | null) {
 }
 
 export function getLocalAttempts(userId: string) {
-  return readJson<StudyAttempt[]>(ATTEMPTS_KEY, []).filter((item) => item.user_id === userId);
+  return readJsonWithLegacyFallback<StudyAttempt[]>(ATTEMPTS_KEY, LEGACY_ATTEMPTS_KEY, []).filter(
+    (item) => item.user_id === userId,
+  );
 }
 
 export function setLocalAttempts(attempts: StudyAttempt[]) {
@@ -56,7 +86,9 @@ export function setLocalAttempts(attempts: StudyAttempt[]) {
 }
 
 export function getLocalStats(userId: string) {
-  return readJson<UserStandardStats[]>(STATS_KEY, []).filter((item) => item.user_id === userId);
+  return readJsonWithLegacyFallback<UserStandardStats[]>(STATS_KEY, LEGACY_STATS_KEY, []).filter(
+    (item) => item.user_id === userId,
+  );
 }
 
 export function setLocalStats(stats: UserStandardStats[]) {
@@ -64,7 +96,9 @@ export function setLocalStats(stats: UserStandardStats[]) {
 }
 
 export function getLocalWrongNotes(userId: string) {
-  return readJson<WrongNote[]>(WRONG_NOTES_KEY, []).filter((item) => item.user_id === userId);
+  return readJsonWithLegacyFallback<WrongNote[]>(WRONG_NOTES_KEY, LEGACY_WRONG_NOTES_KEY, []).filter(
+    (item) => item.user_id === userId,
+  );
 }
 
 export function setLocalWrongNotes(notes: WrongNote[]) {
@@ -76,7 +110,8 @@ export function mergeLocalByUser<T extends { user_id: string }>(
   userId: string,
   nextItems: T[],
 ) {
-  const current = readJson<T[]>(key, []);
+  const legacyKey = getLegacyKey(key);
+  const current = legacyKey ? readJsonWithLegacyFallback<T[]>(key, legacyKey, []) : readJson<T[]>(key, []);
   const merged = [...current.filter((item) => item.user_id !== userId), ...nextItems];
   writeJson(key, merged);
 }

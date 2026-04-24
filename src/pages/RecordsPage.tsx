@@ -324,11 +324,11 @@ export function RecordsPage() {
   }
 
   if (loading || !stats) {
-    return <Layout title="학습기록">불러오는 중...</Layout>;
+    return <Layout title="기록노트">불러오는 중...</Layout>;
   }
 
   return (
-    <Layout title="학습기록" description="학습 흐름과 약점 분포를 한 화면에서 확인할 수 있도록 정리했습니다.">
+    <Layout title="기록노트" description="학습 흐름과 약점 분포를 한 화면에서 확인할 수 있도록 정리했습니다.">
       <Hero>
         <HeroTop>
           <HeroCopy>

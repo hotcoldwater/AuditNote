@@ -61,6 +61,7 @@ export interface UserStandardStats {
   last_result_status: ResultStatus | null;
   consecutive_correct_count: number;
   consecutive_wrong_count: number;
+  last_user_answer: string | null;
   last_attempted_at: string | null;
   updated_at?: string;
 }

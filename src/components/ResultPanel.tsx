@@ -1,4 +1,5 @@
 import type { ScoringResult, Standard } from '../types';
+import { formatAnswerForDisplay, formatExamYears, getStandardReferenceText } from '../lib/standardDisplay';
 import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -14,12 +15,29 @@ const Section = styled('div', {
   gap: '$2',
 });
 
-const Label = styled('div', {
+const SectionTitle = styled('div', {
   fontSize: '$2',
-  color: '$subtleText',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
+  color: '$primary',
   fontWeight: 700,
+  lineHeight: 1.6,
+});
+
+const Reference = styled('div', {
+  fontSize: '$2',
+  color: '$mutedText',
+  lineHeight: 1.7,
+});
+
+const AnswerMeta = styled('div', {
+  display: 'grid',
+  gap: '$1',
+});
+
+const AnswerMetaTitle = styled('div', {
+  fontSize: '$3',
+  color: '$primary',
+  fontWeight: 700,
+  lineHeight: 1.5,
 });
 
 const Body = styled('div', {
@@ -60,6 +78,8 @@ export function ResultPanel({
   onNext: () => void;
   onExit: () => void;
 }) {
+  const examYears = formatExamYears(standard.exam_years);
+
   return (
     <Card css={{ display: 'grid', gap: '$6' }}>
       <div style={{ display: 'grid', gap: 10 }}>
@@ -83,11 +103,15 @@ export function ResultPanel({
 
       <Stack>
         <Section>
-          <Label>정답 원문</Label>
-          <Body>{standard.answer}</Body>
+          <AnswerMeta>
+            <AnswerMetaTitle>{`Lv${standard.level}. ${standard.title}`}</AnswerMetaTitle>
+            <SectionTitle>{getStandardReferenceText(standard)}</SectionTitle>
+            {examYears ? <Reference>{`출제연도 ${examYears}`}</Reference> : null}
+          </AnswerMeta>
+          <Body>{formatAnswerForDisplay(standard.answer)}</Body>
         </Section>
         <Section>
-          <Label>내 답안</Label>
+          <Reference>내 답안</Reference>
           <Body>{userAnswer.trim() || '미응답'}</Body>
         </Section>
       </Stack>

@@ -4,10 +4,10 @@ import { gradeAnswer } from '../lib/aiGrading';
 import { recordStudyOutcome, loadUserStandardStatsMap } from '../lib/attempts';
 import { useAuth } from '../lib/auth';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
+import { getStandardLocationLines, getStandardReferenceText } from '../lib/standardDisplay';
 import { fetchActiveStandards } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
 import type { ScoringResult, Standard, StudyMode } from '../types';
-import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResultPanel } from './ResultPanel';
@@ -19,18 +19,36 @@ const Stack = styled('div', {
   gap: '$6',
 });
 
-const Meta = styled('div', {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '$2',
-});
-
 const Title = styled('h2', {
   margin: 0,
   fontFamily: '$heading',
   fontSize: '$5',
-  lineHeight: 1.25,
+  lineHeight: 1.2,
   color: '$primary',
+});
+
+const LocationBlock = styled('div', {
+  display: 'grid',
+  gap: '$2',
+  padding: '$4',
+  borderRadius: '$lg',
+  background:
+    'linear-gradient(135deg, rgba(226, 236, 255, 0.92) 0%, rgba(244, 248, 255, 0.96) 100%)',
+  border: '1px solid rgba(112, 146, 214, 0.18)',
+});
+
+const LocationLine = styled('div', {
+  color: '$primary',
+  fontSize: '$4',
+  lineHeight: 1.45,
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
+});
+
+const SourceText = styled('div', {
+  color: '$mutedText',
+  fontSize: '$2',
+  lineHeight: 1.7,
 });
 
 const Notice = styled('div', {
@@ -48,24 +66,6 @@ const MetaSection = styled('section', {
   display: 'grid',
   gap: '$4',
 });
-
-const Label = styled('div', {
-  color: '$subtleText',
-  fontSize: '$2',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  fontWeight: 700,
-});
-
-function modeLabel(mode: StudyMode, partNo?: number | null) {
-  if (mode === 'RANDOM') {
-    return '전체 랜덤';
-  }
-  if (mode === 'PART') {
-    return `${partNo}편 학습`;
-  }
-  return '오답 학습';
-}
 
 export function SessionPlayer({
   mode,
@@ -98,6 +98,8 @@ export function SessionPlayer({
     setSubmitNotice(undefined);
 
     try {
+      const statsMap = await loadUserStandardStatsMap(user.id);
+
       if (mode === 'WRONG_NOTE') {
         const [standardsPayload, wrongNotes] = await Promise.all([
           fetchActiveStandards(),
@@ -106,16 +108,20 @@ export function SessionPlayer({
 
         const wrongIds = new Set(wrongNotes.filter((item) => !item.is_resolved).map((item) => item.standard_id));
         const candidates = standardsPayload.standards.filter((item) => wrongIds.has(item.id));
+        const nextStandard = pickRandomWrongStandard(candidates, preferredStandardId, excludeStandardId);
         setNotice(standardsPayload.notice);
-        setCurrent(pickRandomWrongStandard(candidates, preferredStandardId, excludeStandardId));
+        setCurrent(nextStandard);
+        setAnswer(nextStandard ? statsMap.get(nextStandard.id)?.last_user_answer ?? '' : '');
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
-        const statsMap = await loadUserStandardStatsMap(user.id);
+        const nextStandard = pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId);
         setNotice(standardsPayload.notice);
-        setCurrent(pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId));
+        setCurrent(nextStandard);
+        setAnswer(nextStandard ? statsMap.get(nextStandard.id)?.last_user_answer ?? '' : '');
       }
     } catch {
       setCurrent(null);
+      setAnswer('');
       setNotice('문제 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(false);
@@ -195,25 +201,20 @@ export function SessionPlayer({
       {notice ? <Notice>{notice}</Notice> : null}
       {submitNotice ? <Notice>{submitNotice}</Notice> : null}
       <QuestionCard>
-        <Meta>
-          <Badge tone="primary">{modeLabel(mode, current.part_no ?? partNo)}</Badge>
-          {current.part_no ? <Badge>{current.part_no}편</Badge> : null}
-          <Badge>{`Lv${current.level}`}</Badge>
-          {current.source_ref ? <Badge>{current.source_ref}</Badge> : null}
-        </Meta>
-
         <MetaSection>
-          <Label>기준서 제목</Label>
-          <Title>{current.title}</Title>
+          <LocationBlock>
+            {getStandardLocationLines(current).map((line) => (
+              <LocationLine key={line}>{line}</LocationLine>
+            ))}
+            <SourceText>{getStandardReferenceText(current)}</SourceText>
+          </LocationBlock>
+          <Title>{`Lv${current.level}. ${current.title}`}</Title>
         </MetaSection>
 
-        <div style={{ display: 'grid', gap: 12 }}>
-          <label htmlFor="answer" style={{ fontSize: 13, color: '#717976', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-            답안을 직접 작성하세요
-          </label>
+        <div>
           <Textarea
             id="answer"
-            placeholder="기억나는 문구를 최대한 그대로 적어보세요."
+            placeholder="답안을 작성하세요."
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
             disabled={Boolean(result) || submitting}

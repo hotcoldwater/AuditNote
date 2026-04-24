@@ -1,4 +1,3 @@
-import { Card } from './Card';
 import { styled } from '../styles/stitches.config';
 
 const Shell = styled('main', {
@@ -7,139 +6,92 @@ const Shell = styled('main', {
   placeItems: 'center',
   padding: '$6 $4',
   background:
-    'radial-gradient(circle at 20% 12%, rgba(200, 220, 255, 0.85), transparent 22%), radial-gradient(circle at 82% 18%, rgba(230, 239, 255, 0.9), transparent 18%), linear-gradient(180deg, #ffffff 0%, $background 42%, #eef4fd 100%)',
+    'radial-gradient(circle at 50% 26%, rgba(120, 163, 240, 0.28), transparent 24%), radial-gradient(circle at 18% 18%, rgba(211, 228, 255, 0.82), transparent 16%), radial-gradient(circle at 82% 22%, rgba(229, 239, 255, 0.9), transparent 18%), linear-gradient(180deg, #ffffff 0%, #f5f9ff 46%, #edf3fd 100%)',
 });
 
-const SplashCard = styled(Card, {
+const SplashCard = styled('div', {
   width: '100%',
-  maxWidth: '560px',
+  maxWidth: '460px',
   display: 'grid',
-  gap: '$6',
-  padding: '$7',
-  backgroundColor: 'rgba(255,255,255,0.84)',
-  backdropFilter: 'blur(18px)',
+  justifyItems: 'center',
+  gap: '$5',
+  padding: '$8 $6',
+});
+
+const LogoHalo = styled('div', {
+  position: 'relative',
+  width: '148px',
+  height: '148px',
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: '50%',
+  background:
+    'radial-gradient(circle, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.74) 48%, rgba(255,255,255,0.14) 72%, rgba(255,255,255,0) 100%)',
+});
+
+const LogoFrame = styled('div', {
+  width: '112px',
+  height: '112px',
+  borderRadius: '$xl',
+  display: 'grid',
+  placeItems: 'center',
+  backgroundColor: 'rgba(255,255,255,0.9)',
+  boxShadow: '0 20px 50px rgba(23, 61, 122, 0.16)',
+  border: '1px solid rgba(255,255,255,0.84)',
+});
+
+const LogoImage = styled('img', {
+  width: '72px',
+  height: '72px',
 });
 
 const Header = styled('div', {
   display: 'grid',
+  justifyItems: 'center',
   gap: '$3',
-});
-
-const Eyebrow = styled('div', {
-  fontSize: '$2',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-  color: '$subtleText',
-  fontWeight: 700,
+  textAlign: 'center',
 });
 
 const Title = styled('h1', {
   margin: 0,
   fontFamily: '$heading',
-  fontSize: '$6',
-  lineHeight: 1.04,
+  fontSize: 'clamp(3rem, 9vw, 4.5rem)',
+  lineHeight: 1,
   color: '$primary',
-  fontWeight: 600,
+  fontWeight: 700,
+  letterSpacing: '-0.04em',
+});
+
+const Subtitle = styled('div', {
+  fontFamily: '$heading',
+  fontSize: 'clamp(1.15rem, 3vw, 1.4rem)',
+  lineHeight: 1.2,
+  color: '$accent',
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
 });
 
 const Description = styled('p', {
   margin: 0,
+  maxWidth: '32ch',
   color: '$mutedText',
-  lineHeight: 1.8,
+  lineHeight: 1.7,
 });
 
-const Meter = styled('div', {
-  display: 'grid',
-  gap: '$3',
-  padding: '$5',
-  borderRadius: '$xl',
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(244,244,242,0.94) 100%)',
-  border: '1px solid $borderSoft',
-});
-
-const MeterLabel = styled('div', {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '$3',
-  fontSize: '$2',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color: '$subtleText',
-  fontWeight: 700,
-});
-
-const Track = styled('div', {
-  width: '100%',
-  height: '8px',
-  borderRadius: '$pill',
-  backgroundColor: '$surfaceStrong',
-  overflow: 'hidden',
-});
-
-const Fill = styled('div', {
-  width: '68%',
-  height: '100%',
-  borderRadius: '$pill',
-  background: 'linear-gradient(90deg, $secondarySoft 0%, $primaryPanel 100%)',
-});
-
-const Footer = styled('div', {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '$2',
-});
-
-const Pill = styled('div', {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '32px',
-  padding: '$1 $3',
-  borderRadius: '$pill',
-  backgroundColor: '$surface',
-  border: '1px solid $borderSoft',
-  color: '$mutedText',
-  fontSize: '$2',
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-  fontWeight: 700,
-});
-
-export function AuthSplash({
-  eyebrow = 'Focused Memorization',
-  title = '감사노트',
-  description = '로그인 상태와 학습 공간을 확인하는 중입니다.',
-}: {
-  eyebrow?: string;
-  title?: string;
-  description?: string;
-}) {
+export function AuthSplash({ title = '감사노트', description = '' }: { title?: string; description?: string }) {
   return (
     <Shell>
       <SplashCard>
+        <LogoHalo>
+          <LogoFrame>
+            <LogoImage src="/favicon.svg" alt="" />
+          </LogoFrame>
+        </LogoHalo>
         <Header>
-          <Eyebrow>{eyebrow}</Eyebrow>
           <Title>{title}</Title>
-          <Description>{description}</Description>
+          <Subtitle>AuditNote</Subtitle>
+          {description ? <Description>{description}</Description> : null}
         </Header>
-
-        <Meter>
-          <MeterLabel>
-            <span>Session Check</span>
-            <span>Almost Ready</span>
-          </MeterLabel>
-          <Track>
-            <Fill />
-          </Track>
-        </Meter>
-
-        <Footer>
-          <Pill>세션 복구</Pill>
-          <Pill>프로필 동기화</Pill>
-          <Pill>학습 공간 준비</Pill>
-        </Footer>
       </SplashCard>
     </Shell>
   );

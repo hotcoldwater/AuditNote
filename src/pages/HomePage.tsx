@@ -17,17 +17,9 @@ const Stack = styled('div', {
 
 const HeroCard = styled(Card, {
   display: 'grid',
-  gap: '$3',
+  gap: '$2',
   background:
     'radial-gradient(circle at top right, rgba(200, 220, 255, 0.78), rgba(200, 220, 255, 0) 32%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,246,253,0.98) 100%)',
-});
-
-const Eyebrow = styled('div', {
-  fontSize: '$2',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-  fontWeight: 700,
-  color: '$subtleText',
 });
 
 const HeroTitle = styled('h2', {
@@ -47,14 +39,6 @@ const Notice = styled('div', {
 const ProgressCard = styled(Card, {
   display: 'grid',
   gap: '$5',
-});
-
-const SectionTitle = styled('h3', {
-  margin: 0,
-  fontFamily: '$heading',
-  fontSize: '$5',
-  lineHeight: 1.1,
-  color: '$primary',
 });
 
 const ProgressList = styled('div', {
@@ -83,6 +67,7 @@ const ProgressLabel = styled('strong', {
   fontSize: '$3',
   color: '$primary',
   fontWeight: 700,
+  lineHeight: 1.45,
 });
 
 const ProgressMeta = styled('span', {
@@ -133,7 +118,7 @@ function buildProgressItems(standards: Standard[], userStats: UserStandardStats[
   const activeStandards = standards.filter((item) => item.is_active);
   const statsMap = new Map(userStats.filter((item) => item.attempt_count > 0).map((item) => [item.standard_id, item]));
 
-  const items: ProgressItem[] = getOrderedStudyParts().map((partNo) => {
+  return getOrderedStudyParts().map((partNo) => {
     const partStandards = activeStandards.filter((item) => item.part_no === partNo);
     const total = partStandards.length;
     let correctCount = 0;
@@ -161,33 +146,6 @@ function buildProgressItems(standards: Standard[], userStats: UserStandardStats[
       totalRate: percent(correctCount + wrongCount, total),
     } satisfies ProgressItem;
   });
-
-  const totalStandards = activeStandards.length;
-  let totalCorrectCount = 0;
-  let totalWrongCount = 0;
-
-  for (const standard of activeStandards) {
-    const stat = statsMap.get(standard.id);
-    if (!stat) {
-      continue;
-    }
-
-    if (isSuccess(stat.last_result_status)) {
-      totalCorrectCount += 1;
-    } else {
-      totalWrongCount += 1;
-    }
-  }
-
-  items.push({
-    key: 'overall',
-    label: '전체 기준서 진도',
-    correctRate: percent(totalCorrectCount, totalStandards),
-    wrongRate: percent(totalWrongCount, totalStandards),
-    totalRate: percent(totalCorrectCount + totalWrongCount, totalStandards),
-  });
-
-  return items;
 }
 
 export function HomePage() {
@@ -223,7 +181,7 @@ export function HomePage() {
         if (!active) {
           return;
         }
-        setNotice('홈 화면을 불러오는 중 오류가 발생했습니다.');
+        setNotice('학습노트를 불러오는 중 오류가 발생했습니다.');
         setProgressItems(buildProgressItems([], []));
       } finally {
         if (active) {
@@ -240,29 +198,27 @@ export function HomePage() {
   }, [user]);
 
   return (
-    <Layout title="감사노트">
+    <Layout title="학습노트">
       <Stack>
         <HeroCard>
-          <Eyebrow>Study Hub</Eyebrow>
           <HeroTitle>{loading ? '...' : user?.nickname ?? '사용자'}</HeroTitle>
           {notice ? <Notice>{notice}</Notice> : null}
         </HeroCard>
 
         <ProgressCard>
-          <SectionTitle>Progress</SectionTitle>
           <ProgressList>
             {progressItems.map((item) => (
               <ProgressRow key={item.key}>
                 <ProgressTop>
                   <ProgressName>
-                    <ProgressLabel>{item.label}</ProgressLabel>
-                    {item.title ? <ProgressMeta>{item.title}</ProgressMeta> : null}
+                    <ProgressLabel>{item.title ? `${item.label}: ${item.title}` : item.label}</ProgressLabel>
+                    <ProgressMeta>{loading ? '' : `${item.correctRate.toFixed(1)}% / ${item.wrongRate.toFixed(1)}%`}</ProgressMeta>
                   </ProgressName>
                   <ProgressValue>{loading ? '-' : `${item.totalRate.toFixed(1)}%`}</ProgressValue>
                 </ProgressTop>
                 <Track>
                   <Segment css={{ width: `${item.correctRate}%`, backgroundColor: '$success' }} />
-                  <Segment css={{ width: `${item.wrongRate}%`, backgroundColor: '$secondarySoft' }} />
+                  <Segment css={{ width: `${item.wrongRate}%`, backgroundColor: '$danger' }} />
                 </Track>
               </ProgressRow>
             ))}

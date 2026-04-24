@@ -12,7 +12,7 @@ export function StudyPlayPage() {
   const studyMode = useMemo<StudyMode>(() => (mode === 'part' ? 'PART' : 'RANDOM'), [mode]);
 
   return (
-    <Layout title="학습 진행" description="제출 즉시 채점하고 같은 조건으로 다음 문제를 이어갑니다.">
+    <Layout title="학습노트">
       <SessionPlayer mode={studyMode} partNo={Number.isFinite(partNo) ? partNo : undefined} />
     </Layout>
   );

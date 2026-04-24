@@ -42,10 +42,20 @@ const Hero = styled('div', {
 const HeroTitle = styled('h1', {
   margin: 0,
   fontFamily: '$heading',
-  fontSize: '$6',
-  lineHeight: 1.05,
+  fontSize: 'clamp(2.6rem, 8vw, 4.2rem)',
+  lineHeight: 0.95,
   color: '$primary',
-  fontWeight: 600,
+  fontWeight: 700,
+  letterSpacing: '-0.05em',
+});
+
+const HeroSubtitle = styled('div', {
+  fontFamily: '$heading',
+  fontSize: '$4',
+  lineHeight: 1.1,
+  color: '$accent',
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
 });
 
 const HeroText = styled('p', {
@@ -136,6 +146,7 @@ export function LoginPage() {
         <Hero>
           <Eyebrow>Focused Memorization</Eyebrow>
           <HeroTitle>감사노트</HeroTitle>
+          <HeroSubtitle>AuditNote</HeroSubtitle>
           <HeroText>기준서 제목만 보고 직접 쓰며, 반복 회독과 오답 복습으로 문구를 몸에 익히는 학습 노트 앱</HeroText>
         </Hero>
 
@@ -150,7 +161,7 @@ export function LoginPage() {
             이메일
             <Input
               type="email"
-              placeholder={supabaseEnabled ? 'you@example.com' : 'demo@gamsanote.local'}
+              placeholder={supabaseEnabled ? 'you@example.com' : 'demo@auditnote.local'}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
