@@ -13,37 +13,54 @@ const Shell = styled('main', {
   placeItems: 'center',
   padding: '$6 $4',
   background:
-    'radial-gradient(circle at top, rgba(200, 220, 255, 0.72), transparent 26%), linear-gradient(180deg, #ffffff 0%, $background 40%, #eef4fd 100%)',
+    'radial-gradient(circle at 50% 18%, rgba(128, 166, 234, 0.26), transparent 18%), radial-gradient(circle at 16% 20%, rgba(222, 232, 255, 0.82), transparent 16%), radial-gradient(circle at 84% 18%, rgba(233, 240, 255, 0.88), transparent 18%), linear-gradient(180deg, #ffffff 0%, #f7faff 46%, #edf3fd 100%)',
 });
 
 const AuthCard = styled(Card, {
   width: '100%',
-  maxWidth: '520px',
+  maxWidth: '436px',
   display: 'grid',
-  gap: '$6',
-  padding: '$7',
-  backgroundColor: 'rgba(255,255,255,0.85)',
-  backdropFilter: 'blur(18px)',
+  gap: '$7',
+  padding: '$8 $7',
+  backgroundColor: 'rgba(255,255,255,0.9)',
+  backdropFilter: 'blur(20px)',
 });
 
-const Eyebrow = styled('div', {
-  fontSize: '$2',
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: '$subtleText',
-  fontWeight: 700,
+const BrandMark = styled('div', {
+  width: '80px',
+  height: '80px',
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: '$xl',
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(232, 241, 255, 0.96) 100%)',
+  border: '1px solid rgba(194, 212, 241, 0.78)',
+  boxShadow: '0 18px 45px rgba(23, 61, 122, 0.12)',
+  justifySelf: 'center',
+});
+
+const BrandIcon = styled('img', {
+  width: '42px',
+  height: '42px',
 });
 
 const Hero = styled('div', {
   display: 'grid',
+  justifyItems: 'center',
+  gap: '$4',
+  textAlign: 'center',
+});
+
+const BrandHeader = styled('div', {
+  display: 'grid',
   gap: '$2',
+  justifyItems: 'center',
 });
 
 const HeroTitle = styled('h1', {
   margin: 0,
   fontFamily: '$heading',
-  fontSize: 'clamp(2.6rem, 8vw, 4.2rem)',
-  lineHeight: 0.95,
+  fontSize: 'clamp(3rem, 8vw, 4.4rem)',
+  lineHeight: 0.92,
   color: '$primary',
   fontWeight: 700,
   letterSpacing: '-0.05em',
@@ -51,36 +68,30 @@ const HeroTitle = styled('h1', {
 
 const HeroSubtitle = styled('div', {
   fontFamily: '$heading',
-  fontSize: '$4',
+  fontSize: '$3',
   lineHeight: 1.1,
   color: '$accent',
-  letterSpacing: '0.22em',
+  letterSpacing: '0.24em',
   textTransform: 'uppercase',
-});
-
-const HeroText = styled('p', {
-  margin: 0,
-  color: '$mutedText',
-  lineHeight: 1.8,
 });
 
 const Field = styled('label', {
   display: 'grid',
   gap: '$2',
-  fontSize: '$2',
+  fontSize: '11px',
   color: '$subtleText',
   textTransform: 'uppercase',
-  letterSpacing: '0.08em',
+  letterSpacing: '0.12em',
   fontWeight: 700,
 });
 
 const Input = styled('input', {
   width: '100%',
-  minHeight: '56px',
+  minHeight: '58px',
   padding: '0 $5',
-  borderRadius: '$md',
+  borderRadius: '$lg',
   border: '1px solid $border',
-  backgroundColor: '$panel',
+  backgroundColor: 'rgba(255,255,255,0.88)',
   fontSize: '$3',
   color: '$text',
   boxShadow: '$soft',
@@ -93,16 +104,28 @@ const Input = styled('input', {
 
 const FooterText = styled('div', {
   fontSize: '$2',
-  color: '$mutedText',
-  lineHeight: 1.7,
+  color: '$subtleText',
+  lineHeight: 1.6,
+  textAlign: 'center',
 });
 
-const Quote = styled('div', {
-  fontFamily: '$heading',
-  fontSize: '$4',
-  color: '$accent',
-  fontStyle: 'italic',
-  lineHeight: 1.55,
+const Form = styled('form', {
+  display: 'grid',
+  gap: '$4',
+});
+
+const Notice = styled('div', {
+  color: '$warning',
+  fontSize: '$2',
+  lineHeight: 1.7,
+  textAlign: 'center',
+});
+
+const ErrorText = styled('div', {
+  color: '$danger',
+  fontSize: '$2',
+  lineHeight: 1.6,
+  textAlign: 'center',
 });
 
 export function LoginPage() {
@@ -144,19 +167,20 @@ export function LoginPage() {
     <Shell>
       <AuthCard>
         <Hero>
-          <Eyebrow>Focused Memorization</Eyebrow>
-          <HeroTitle>감사노트</HeroTitle>
-          <HeroSubtitle>AuditNote</HeroSubtitle>
-          <HeroText>기준서 제목만 보고 직접 쓰며, 반복 회독과 오답 복습으로 문구를 몸에 익히는 학습 노트 앱</HeroText>
+          <BrandMark>
+            <BrandIcon src="/favicon.svg" alt="" />
+          </BrandMark>
+          <BrandHeader>
+            <HeroTitle>감사노트</HeroTitle>
+            <HeroSubtitle>AuditNote</HeroSubtitle>
+          </BrandHeader>
         </Hero>
 
-        <Quote>"The beautiful thing about learning is nobody can take it away from you."</Quote>
-
         {!supabaseEnabled ? (
-          <div style={{ color: '#7b5a19', fontSize: 14, lineHeight: 1.7 }}>{supabaseDisabledMessage}</div>
+          <Notice>{supabaseDisabledMessage}</Notice>
         ) : null}
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
+        <Form onSubmit={handleSubmit}>
           <Field>
             이메일
             <Input
@@ -175,11 +199,11 @@ export function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
             />
           </Field>
-          {error ? <div style={{ color: '$danger', fontSize: 14 }}>{error}</div> : null}
+          {error ? <ErrorText>{error}</ErrorText> : null}
           <Button type="submit" disabled={submitting}>
             {supabaseEnabled ? '로그인' : '샘플 모드 시작'}
           </Button>
-        </form>
+        </Form>
 
         <FooterText>
           계정이 없으면 <Link to="/signup">회원가입</Link>

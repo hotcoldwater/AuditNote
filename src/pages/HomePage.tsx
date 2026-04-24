@@ -39,6 +39,9 @@ const Notice = styled('div', {
 const ProgressCard = styled(Card, {
   display: 'grid',
   gap: '$5',
+  '&::before': {
+    display: 'none',
+  },
 });
 
 const ProgressList = styled('div', {
