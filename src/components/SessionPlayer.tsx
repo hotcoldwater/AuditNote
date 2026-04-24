@@ -4,7 +4,7 @@ import { gradeAnswer } from '../lib/aiGrading';
 import { recordStudyOutcome, loadUserStandardStatsMap } from '../lib/attempts';
 import { useAuth } from '../lib/auth';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
-import { getStandardLocationLines, getStandardReferenceText } from '../lib/standardDisplay';
+import { getStandardLocationLines } from '../lib/standardDisplay';
 import { fetchActiveStandards } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
 import type { ScoringResult, Standard, StudyMode } from '../types';
@@ -23,32 +23,45 @@ const Title = styled('h2', {
   margin: 0,
   fontFamily: '$heading',
   fontSize: '$5',
-  lineHeight: 1.2,
+  lineHeight: 1.26,
   color: '$primary',
 });
 
 const LocationBlock = styled('div', {
   display: 'grid',
-  gap: '$2',
-  padding: '$4',
-  borderRadius: '$lg',
+  gap: '$1',
+  padding: '$5',
+  borderRadius: '$xl',
   background:
-    'linear-gradient(135deg, rgba(226, 236, 255, 0.92) 0%, rgba(244, 248, 255, 0.96) 100%)',
-  border: '1px solid rgba(112, 146, 214, 0.18)',
+    'linear-gradient(180deg, rgba(236, 243, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%)',
+  border: '1px solid rgba(112, 146, 214, 0.16)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75)',
 });
 
-const LocationLine = styled('div', {
+const PartLine = styled('div', {
+  color: '$subtleText',
+  fontSize: '$2',
+  lineHeight: 1.6,
+  fontWeight: 700,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+});
+
+const ChapterLine = styled('div', {
   color: '$primary',
   fontSize: '$4',
-  lineHeight: 1.45,
+  lineHeight: 1.35,
   fontWeight: 700,
   letterSpacing: '-0.02em',
 });
 
-const SourceText = styled('div', {
-  color: '$mutedText',
-  fontSize: '$2',
-  lineHeight: 1.7,
+const SectionLine = styled('div', {
+  color: '$accent',
+  fontSize: '$3',
+  lineHeight: 1.5,
+  fontWeight: 700,
+  paddingLeft: '$4',
+  borderLeft: '2px solid rgba(112, 146, 214, 0.28)',
 });
 
 const Notice = styled('div', {
@@ -203,10 +216,15 @@ export function SessionPlayer({
       <QuestionCard>
         <MetaSection>
           <LocationBlock>
-            {getStandardLocationLines(current).map((line) => (
-              <LocationLine key={line}>{line}</LocationLine>
-            ))}
-            <SourceText>{getStandardReferenceText(current)}</SourceText>
+            {getStandardLocationLines(current).map((line, index) => {
+              if (index === 0) {
+                return <PartLine key={line}>{line}</PartLine>;
+              }
+              if (index === 1) {
+                return <ChapterLine key={line}>{line}</ChapterLine>;
+              }
+              return <SectionLine key={line}>{line}</SectionLine>;
+            })}
           </LocationBlock>
           <Title>{`Lv${current.level}. ${current.title}`}</Title>
         </MetaSection>

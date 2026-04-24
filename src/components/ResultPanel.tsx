@@ -1,5 +1,5 @@
 import type { ScoringResult, Standard } from '../types';
-import { formatAnswerForDisplay, formatExamYears, getStandardReferenceText } from '../lib/standardDisplay';
+import { formatAnswerForDisplay, formatExamYears, getStandardSourceRefText } from '../lib/standardDisplay';
 import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -105,7 +105,7 @@ export function ResultPanel({
         <Section>
           <AnswerMeta>
             <AnswerMetaTitle>{`Lv${standard.level}. ${standard.title}`}</AnswerMetaTitle>
-            <SectionTitle>{getStandardReferenceText(standard)}</SectionTitle>
+            <SectionTitle>{getStandardSourceRefText(standard)}</SectionTitle>
             {examYears ? <Reference>{`출제연도 ${examYears}`}</Reference> : null}
           </AnswerMeta>
           <Body>{formatAnswerForDisplay(standard.answer)}</Body>

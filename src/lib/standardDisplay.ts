@@ -1,13 +1,5 @@
 import type { Standard } from '../types';
-import { getOutlineEntry, getSourceTitle } from './sourceOutline';
-
-export function getStandardReferenceText(standard: Standard) {
-  const sourceTitle = getSourceTitle(standard);
-  const outline = getOutlineEntry(standard);
-  const location = [outline.part, outline.chapter, outline.section].filter(Boolean).join(' · ');
-
-  return location ? `${sourceTitle} · ${location}` : sourceTitle;
-}
+import { getOutlineEntry } from './sourceOutline';
 
 export function getStandardLocationLines(standard: Standard) {
   const lines: string[] = [];
@@ -24,6 +16,10 @@ export function getStandardLocationLines(standard: Standard) {
   }
 
   return lines;
+}
+
+export function getStandardSourceRefText(standard: Standard) {
+  return standard.source_ref?.trim() || '출처 미기재';
 }
 
 export function formatExamYears(examYears: string[]) {
