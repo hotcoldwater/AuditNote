@@ -109,7 +109,7 @@ const Pill = styled('div', {
 
 export function AuthSplash({
   eyebrow = 'Focused Memorization',
-  title = 'GamsaNote',
+  title = '감사노트',
   description = '로그인 상태와 학습 공간을 확인하는 중입니다.',
 }: {
   eyebrow?: string;

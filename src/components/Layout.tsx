@@ -168,26 +168,20 @@ export function Layout({
       <TopBar>
         <TopBarInner>
           <Brand>
-            <BrandName>GamsaNote</BrandName>
+            <BrandName>감사노트</BrandName>
           </Brand>
           <NavGroup>
             <NavLink to="/" className={location.pathname === '/' ? 'active' : ''}>
               홈
             </NavLink>
-            <NavLink to="/study/setup" className={location.pathname.startsWith('/study') ? 'active' : ''}>
-              학습
-            </NavLink>
             <NavLink
               to="/wrong-notes"
-              className={location.pathname.startsWith('/wrong') && !location.pathname.includes('/play') ? 'active' : ''}
+              className={location.pathname.startsWith('/wrong') ? 'active' : ''}
             >
               오답노트
             </NavLink>
             <NavLink to="/records" className={location.pathname === '/records' ? 'active' : ''}>
               기록
-            </NavLink>
-            <NavLink to="/settings" className={location.pathname === '/settings' ? 'active' : ''}>
-              설정
             </NavLink>
           </NavGroup>
           <Badge tone={usingDemo ? 'warning' : 'primary'}>
@@ -207,13 +201,13 @@ export function Layout({
           <span className="material-symbols-outlined">home</span>
           <span>홈</span>
         </MobileNavLink>
+        <MobileNavLink to="/wrong-notes" className={location.pathname.startsWith('/wrong') ? 'active' : ''}>
+          <span className="material-symbols-outlined">note_stack</span>
+          <span>오답노트</span>
+        </MobileNavLink>
         <MobileNavLink to="/records" className={location.pathname === '/records' ? 'active' : ''}>
           <span className="material-symbols-outlined">menu_book</span>
           <span>기록</span>
-        </MobileNavLink>
-        <MobileNavLink to="/settings" className={location.pathname === '/settings' ? 'active' : ''}>
-          <span className="material-symbols-outlined">settings</span>
-          <span>설정</span>
         </MobileNavLink>
       </MobileNav>
     </Shell>

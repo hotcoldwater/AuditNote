@@ -135,7 +135,7 @@ export function LoginPage() {
       <AuthCard>
         <Hero>
           <Eyebrow>Focused Memorization</Eyebrow>
-          <HeroTitle>GamsaNote</HeroTitle>
+          <HeroTitle>감사노트</HeroTitle>
           <HeroText>기준서 제목만 보고 직접 쓰며, 반복 회독과 오답 복습으로 문구를 몸에 익히는 학습 노트 앱</HeroText>
         </Hero>
 

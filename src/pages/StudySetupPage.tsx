@@ -1,92 +1,107 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Layout } from '../components/Layout';
+import { getOrderedStudyParts, getStudyPartTitle } from '../lib/partMeta';
 import { fetchActiveStandards, getAvailableParts } from '../lib/standards';
 import { styled } from '../styles/stitches.config';
 
-const Grid = styled('div', {
+const Stack = styled('div', {
   display: 'grid',
-  gap: '$5',
+  gap: '$4',
 });
 
-const PartGrid = styled('div', {
+const Notice = styled(Card, {
+  color: '$warning',
+  lineHeight: 1.7,
+});
+
+const Grid = styled('div', {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: '$3',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   '@sm': {
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   },
 });
 
-const SectionTitle = styled('h2', {
-  margin: 0,
-  fontFamily: '$heading',
-  fontSize: '$5',
-  lineHeight: 1.2,
-  color: '$primary',
+const StudyButton = styled('button', {
+  all: 'unset',
+  boxSizing: 'border-box',
+  display: 'grid',
+  gap: '$2',
+  minHeight: '108px',
+  padding: '$5',
+  borderRadius: '$lg',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$panel',
+  boxShadow: '$soft',
+  cursor: 'pointer',
+  transition: 'transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    borderColor: '$border',
+    backgroundColor: '$surface',
+  },
+  '&:focus-visible': {
+    boxShadow: '$focus',
+  },
+  '&:disabled': {
+    opacity: 0.4,
+    cursor: 'not-allowed',
+    transform: 'none',
+  },
 });
 
-const SectionText = styled('p', {
-  margin: 0,
+const ButtonLabel = styled('div', {
+  fontSize: '$3',
+  fontWeight: 700,
+  color: '$primary',
+  lineHeight: 1.3,
+});
+
+const ButtonTitle = styled('div', {
+  fontSize: '$2',
   color: '$mutedText',
-  lineHeight: 1.8,
+  lineHeight: 1.6,
 });
 
 export function StudySetupPage() {
   const navigate = useNavigate();
-  const [parts, setParts] = useState<number[]>([1, 2, 3, 4, 5, 6]);
+  const [parts, setParts] = useState<number[]>(getOrderedStudyParts());
   const [notice, setNotice] = useState<string | undefined>();
 
   useEffect(() => {
     fetchActiveStandards().then((payload) => {
-      setParts(getAvailableParts(payload.standards).length > 0 ? getAvailableParts(payload.standards) : [1, 2, 3, 4, 5, 6]);
+      const availableParts = getAvailableParts(payload.standards);
+      setParts(availableParts.length > 0 ? availableParts : getOrderedStudyParts());
       setNotice(payload.notice);
     });
   }, []);
 
   return (
-    <Layout title="학습 설정" description="문제 수를 정하지 않고 한 문제씩 계속 이어서 풉니다.">
-      {notice ? <Card css={{ color: '$warning', lineHeight: 1.7 }}>{notice}</Card> : null}
+    <Layout title="학습 시작">
+      <Stack>
+        {notice ? <Notice>{notice}</Notice> : null}
 
-      <Grid>
-        <Card css={{ display: 'grid', gap: '$5', backgroundColor: '$primaryPanel', color: '$panel' }}>
-          <div>
-            <div style={{ fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.72, marginBottom: 8 }}>
-              Random Session
-            </div>
-            <SectionTitle css={{ color: '$panel', marginBottom: '$2' }}>전체 랜덤</SectionTitle>
-            <SectionText css={{ color: 'rgba(255,255,255,0.78)' }}>
-              전체 기준서에서 가중치 기반으로 한 문제씩 출제합니다.
-            </SectionText>
-          </div>
-          <Button onClick={() => navigate('/study/play?mode=random')}>전체 랜덤 시작</Button>
-        </Card>
+        <Grid>
+          {getOrderedStudyParts().map((partNo) => (
+            <StudyButton
+              key={partNo}
+              onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}`)}
+              disabled={!parts.includes(partNo)}
+            >
+              <ButtonLabel>{partNo}편</ButtonLabel>
+              <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
+            </StudyButton>
+          ))}
 
-        <Card css={{ display: 'grid', gap: '$5' }}>
-          <div>
-            <div style={{ fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#717976', marginBottom: 8 }}>
-              Focus By Part
-            </div>
-            <SectionTitle css={{ marginBottom: '$2' }}>주제별</SectionTitle>
-            <SectionText>
-              편 단위까지만 선택해서 집중 학습합니다.
-            </SectionText>
-          </div>
-          <PartGrid>
-            {parts.map((partNo) => (
-              <Button
-                key={partNo}
-                tone="secondary"
-                onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}`)}
-              >
-                {partNo}편
-              </Button>
-            ))}
-          </PartGrid>
-        </Card>
-      </Grid>
+          <StudyButton onClick={() => navigate('/study/play?mode=random')}>
+            <ButtonLabel>전체</ButtonLabel>
+            <ButtonTitle>전체 범위</ButtonTitle>
+          </StudyButton>
+        </Grid>
+      </Stack>
     </Layout>
   );
 }

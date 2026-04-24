@@ -9,7 +9,7 @@ export function ProtectedRoute() {
   if (loading) {
     return (
       <AuthSplash
-        title="GamsaNote"
+        title="감사노트"
         description="저장된 로그인 상태를 확인하고 학습 대시보드를 준비하는 중입니다."
       />
     );
