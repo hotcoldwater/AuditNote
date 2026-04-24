@@ -33,13 +33,17 @@ function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> 
   ]);
 }
 
+function fallbackAuthUser(user: User): AuthUser {
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    nickname: user.user_metadata.nickname ?? user.email?.split('@')[0] ?? '사용자',
+  };
+}
+
 async function loadProfile(user: User): Promise<AuthUser> {
   if (!supabase) {
-    return {
-      id: user.id,
-      email: user.email ?? '',
-      nickname: user.user_metadata.nickname ?? user.email?.split('@')[0] ?? '사용자',
-    };
+    return fallbackAuthUser(user);
   }
 
   const { data } = await withTimeout(
@@ -59,7 +63,11 @@ async function syncSession(session: Session | null) {
     return null;
   }
 
-  return loadProfile(session.user);
+  try {
+    return await loadProfile(session.user);
+  } catch {
+    return fallbackAuthUser(session.user);
+  }
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -81,34 +89,29 @@ export function AuthProvider({ children }: PropsWithChildren) {
           return;
         }
 
-        try {
-          setUser(await syncSession(data.session));
-        } catch {
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
+        setUser(await syncSession(data.session));
+        setLoading(false);
       })
       .catch(() => {
         if (!mounted) {
           return;
         }
-        setUser(null);
         setLoading(false);
       });
 
-    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) {
         return;
       }
 
-      try {
-        setUser(await withTimeout(syncSession(session), AUTH_TIMEOUT_MS));
-      } catch {
+      if (event === 'SIGNED_OUT') {
         setUser(null);
-      } finally {
         setLoading(false);
+        return;
       }
+
+      setUser(await syncSession(session));
+      setLoading(false);
     });
 
     return () => {

@@ -95,7 +95,7 @@ const Quote = styled('div', {
 });
 
 export function LoginPage() {
-  const { user, signIn, supabaseEnabled } = useAuth();
+  const { user, loading, signIn, supabaseEnabled } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -107,6 +107,20 @@ export function LoginPage() {
 
   if (user) {
     return <Navigate to={nextPath} replace />;
+  }
+
+  if (loading) {
+    return (
+      <Shell>
+        <AuthCard>
+          <Hero>
+            <Eyebrow>Focused Memorization</Eyebrow>
+            <HeroTitle>GamsaNote</HeroTitle>
+            <HeroText>로그인 상태를 확인하는 중입니다.</HeroText>
+          </Hero>
+        </AuthCard>
+      </Shell>
+    );
   }
 
   async function handleSubmit(event: FormEvent) {
