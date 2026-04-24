@@ -47,6 +47,16 @@ const BrandName = styled('div', {
   color: '$primary',
 });
 
+const ProfileLink = styled(Link, {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: '$pill',
+  '&:focus-visible': {
+    boxShadow: '$focus',
+  },
+});
+
 const Inner = styled('div', {
   width: '100%',
   maxWidth: '960px',
@@ -177,9 +187,11 @@ export function Layout({
               기록노트
             </NavLink>
           </NavGroup>
-          <Badge tone={usingDemo ? 'warning' : 'primary'}>
-            {usingDemo ? '샘플 모드' : user?.nickname ?? '로그인'}
-          </Badge>
+          <ProfileLink to="/settings" aria-label="개인정보설정">
+            <Badge tone={usingDemo ? 'warning' : 'primary'}>
+              {usingDemo ? user?.nickname ?? '샘플 모드' : user?.nickname ?? '로그인'}
+            </Badge>
+          </ProfileLink>
         </TopBarInner>
       </TopBar>
       <Inner>

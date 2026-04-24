@@ -17,7 +17,12 @@ interface AuthContextValue {
   supabaseEnabled: boolean;
   usingDemo: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, nickname: string) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    nickname: string,
+  ) => Promise<{ error: string | null; message?: string | null; needsEmailConfirmation?: boolean }>;
+  updateNickname: (nickname: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -68,6 +73,29 @@ async function syncSession(session: Session | null) {
   } catch {
     return fallbackAuthUser(session.user);
   }
+}
+
+function normalizeAuthErrorMessage(message: string | null | undefined) {
+  const normalized = (message ?? '').trim();
+  const lower = normalized.toLowerCase();
+
+  if (!normalized) {
+    return '인증 처리 중 오류가 발생했습니다.';
+  }
+
+  if (lower.includes('email not confirmed')) {
+    return '이메일 확인이 아직 완료되지 않았습니다. 메일함에서 인증 메일을 확인해 주세요.';
+  }
+
+  if (lower.includes('invalid login credentials')) {
+    return '이메일 또는 비밀번호가 올바르지 않습니다.';
+  }
+
+  if (lower.includes('user already registered')) {
+    return '이미 가입된 이메일입니다. 로그인하거나 비밀번호 재설정을 진행해 주세요.';
+  }
+
+  return normalized;
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -140,7 +168,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error?.message ?? null };
+        return { error: error ? normalizeAuthErrorMessage(error.message) : null };
       },
       async signUp(email, password, nickname) {
         if (!isSupabaseConfigured || !supabase) {
@@ -152,7 +180,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           };
           setDemoUser(demoUser);
           setUser(demoUser);
-          return { error: null };
+          return { error: null, needsEmailConfirmation: false, message: null };
         }
 
         const signUpResult = await supabase.auth.signUp({
@@ -164,7 +192,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         });
 
         if (signUpResult.error) {
-          return { error: signUpResult.error.message };
+          return {
+            error: normalizeAuthErrorMessage(signUpResult.error.message),
+            needsEmailConfirmation: false,
+            message: null,
+          };
         }
 
         const authUser = signUpResult.data.user;
@@ -178,13 +210,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         if (!signUpResult.data.session) {
-          const signInResult = await supabase.auth.signInWithPassword({ email, password });
-          if (signInResult.error) {
-            return { error: signInResult.error.message };
-          }
+          return {
+            error: null,
+            needsEmailConfirmation: true,
+            message: '회원가입이 완료되었습니다. 이메일에서 인증 링크를 확인한 뒤 로그인해 주세요.',
+          };
         }
 
-        return { error: null };
+        return { error: null, needsEmailConfirmation: false, message: null };
       },
       async signOut() {
         setDemoUser(null);
@@ -194,6 +227,63 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         await supabase.auth.signOut();
+      },
+      async updateNickname(nickname) {
+        const trimmedNickname = nickname.trim();
+
+        if (!trimmedNickname) {
+          return { error: '닉네임을 입력해 주세요.' };
+        }
+
+        if (!user) {
+          return { error: '로그인 상태를 다시 확인해 주세요.' };
+        }
+
+        if (!isSupabaseConfigured || !supabase || user.isDemo) {
+          const nextUser = {
+            ...user,
+            nickname: trimmedNickname,
+            isDemo: true,
+          } satisfies AuthUser;
+          setDemoUser(nextUser);
+          setUser(nextUser);
+          return { error: null };
+        }
+
+        try {
+          const { error: profileError } = await withTimeout(
+            supabase
+              .from('profiles')
+              .upsert({ id: user.id, email: user.email, nickname: trimmedNickname }),
+            AUTH_TIMEOUT_MS,
+          );
+
+          if (profileError) {
+            return { error: profileError.message };
+          }
+
+          const { error: authError } = await withTimeout(
+            supabase.auth.updateUser({
+              data: {
+                nickname: trimmedNickname,
+              },
+            }),
+            AUTH_TIMEOUT_MS,
+          );
+
+          if (authError) {
+            return { error: authError.message };
+          }
+
+          setUser({
+            ...user,
+            nickname: trimmedNickname,
+          });
+
+          return { error: null };
+        } catch {
+          return { error: '닉네임 저장 중 오류가 발생했습니다.' };
+        }
       },
     }),
     [loading, user],

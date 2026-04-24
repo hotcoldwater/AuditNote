@@ -87,6 +87,7 @@ export function SignupPage() {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   if (user) {
@@ -97,12 +98,18 @@ export function SignupPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setNotice(null);
 
     const result = await signUp(email, password, nickname);
     setSubmitting(false);
 
     if (result.error) {
       setError(result.error);
+      return;
+    }
+
+    if (result.needsEmailConfirmation) {
+      setNotice(result.message ?? '이메일 인증이 필요합니다. 메일함을 확인해 주세요.');
       return;
     }
 
@@ -135,6 +142,7 @@ export function SignupPage() {
             닉네임
             <Input value={nickname} onChange={(event) => setNickname(event.target.value)} />
           </Field>
+          {notice ? <div style={{ color: '#2F5D50', fontSize: 14, lineHeight: 1.7 }}>{notice}</div> : null}
           {error ? <div style={{ color: '$danger', fontSize: 14 }}>{error}</div> : null}
           <Button type="submit" disabled={submitting}>
             {supabaseEnabled ? '회원가입' : '샘플 계정 만들기'}
