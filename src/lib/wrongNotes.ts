@@ -2,6 +2,8 @@ import type { WrongNote } from '../types';
 import { getLocalWrongNotes, localStoreKeys, mergeLocalByUser } from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
+const SUPABASE_TIMEOUT_MS = 12000;
+
 function withTimeout(promise: PromiseLike<any>, timeoutMs: number): Promise<any> {
   return Promise.race<any>([
     Promise.resolve(promise),
@@ -32,7 +34,7 @@ export async function listWrongNotes(userId: string, includeResolved = false): P
       query = query.eq('is_resolved', false);
     }
 
-    const { data, error } = await withTimeout(query.order('updated_at', { ascending: false }), 8000);
+    const { data, error } = await withTimeout(query.order('updated_at', { ascending: false }), SUPABASE_TIMEOUT_MS);
 
     if (error) {
       throw error;
@@ -123,7 +125,7 @@ export async function upsertWrongNote(
         .upsert(payload, { onConflict: 'user_id,standard_id' })
         .select()
         .single(),
-      8000,
+      SUPABASE_TIMEOUT_MS,
     );
 
     if (error) {
@@ -180,7 +182,7 @@ export async function resolveWrongNote(userId: string, standardId: string) {
         .update({ is_resolved: true, updated_at: now })
         .eq('user_id', userId)
         .eq('standard_id', standardId),
-      8000,
+      SUPABASE_TIMEOUT_MS,
     );
 
     if (error) {

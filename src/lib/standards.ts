@@ -2,6 +2,8 @@ import { sampleStandards } from '../data/sampleStandards';
 import type { Standard } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
 
+const SUPABASE_TIMEOUT_MS = 12000;
+
 export interface StandardsPayload {
   standards: Standard[];
   source: 'supabase' | 'sample';
@@ -66,7 +68,10 @@ export async function fetchActiveStandards(partNo?: number | null): Promise<Stan
       query = query.eq('part_no', partNo);
     }
 
-    const { data, error } = await withTimeout(query.order('part_no').order('level').order('title'), 8000);
+    const { data, error } = await withTimeout(
+      query.order('part_no').order('level').order('title'),
+      SUPABASE_TIMEOUT_MS,
+    );
 
     if (error || !data || data.length === 0) {
       return fallbackStandards(partNo);

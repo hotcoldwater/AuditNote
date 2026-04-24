@@ -153,6 +153,12 @@ on public.study_attempts
 for insert
 with check (auth.uid() = user_id);
 
+drop policy if exists "study_attempts_delete_own" on public.study_attempts;
+create policy "study_attempts_delete_own"
+on public.study_attempts
+for delete
+using (auth.uid() = user_id);
+
 drop policy if exists "user_standard_stats_select_own" on public.user_standard_stats;
 create policy "user_standard_stats_select_own"
 on public.user_standard_stats

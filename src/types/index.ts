@@ -108,9 +108,11 @@ export interface LevelAccuracyItem {
 
 export interface RecentStudyItem {
   id: string;
+  standardId: string;
   standardTitle: string;
   resultStatus: ResultStatus;
   score: number;
+  mode: string;
   createdAt: string;
 }
 
@@ -127,7 +129,9 @@ export interface DashboardStats {
   totalAttempts: number;
   averageScore: number;
   overallWrongRate: number;
-  recent7Days: Array<{ date: string; count: number }>;
+  recent7Days: Array<{ date: string; count: number; averageScore: number }>;
+  statusBreakdown: Array<{ label: string; count: number; tone: 'success' | 'warning' | 'danger' | 'primary' }>;
+  scoreDistribution: Array<{ label: string; count: number }>;
   partProgress: PartProgressItem[];
   levelAccuracy: LevelAccuracyItem[];
   frequentWrongStandards: FrequentWrongItem[];

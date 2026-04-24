@@ -22,6 +22,16 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const AUTH_TIMEOUT_MS = 12000;
+
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
+  return Promise.race<T>([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), timeoutMs);
+    }),
+  ]);
+}
 
 async function loadProfile(user: User): Promise<AuthUser> {
   if (!supabase) {
@@ -32,11 +42,10 @@ async function loadProfile(user: User): Promise<AuthUser> {
     };
   }
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('nickname, email')
-    .eq('id', user.id)
-    .maybeSingle();
+  const { data } = await withTimeout(
+    supabase.from('profiles').select('nickname, email').eq('id', user.id).maybeSingle(),
+    AUTH_TIMEOUT_MS,
+  );
 
   return {
     id: user.id,
@@ -66,22 +75,40 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) {
-        return;
-      }
+    withTimeout(supabase.auth.getSession(), AUTH_TIMEOUT_MS)
+      .then(async ({ data }) => {
+        if (!mounted) {
+          return;
+        }
 
-      setUser(await syncSession(data.session));
-      setLoading(false);
-    });
+        try {
+          setUser(await syncSession(data.session));
+        } catch {
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!mounted) {
+          return;
+        }
+        setUser(null);
+        setLoading(false);
+      });
 
     const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) {
         return;
       }
 
-      setUser(await syncSession(session));
-      setLoading(false);
+      try {
+        setUser(await withTimeout(syncSession(session), AUTH_TIMEOUT_MS));
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => {
