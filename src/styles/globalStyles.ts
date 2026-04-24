@@ -1,8 +1,7 @@
 import { globalCss } from './stitches.config';
 
 export const globalStyles = globalCss({
-  '@import':
-    'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");',
+  '@import': 'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css")',
   '*': {
     boxSizing: 'border-box',
   },

@@ -58,7 +58,7 @@ function toNullableNumber(value: string) {
 
 function toArray(value: string) {
   return value
-    .split('|')
+    .split(/[|,;\n]/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
