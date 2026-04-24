@@ -2,16 +2,16 @@ import { styled } from '../styles/stitches.config';
 
 const Track = styled('div', {
   width: '100%',
-  height: '10px',
+  height: '6px',
   borderRadius: '$pill',
-  backgroundColor: '$surface',
+  backgroundColor: '$surfaceStrong',
   overflow: 'hidden',
 });
 
 const Fill = styled('div', {
   height: '100%',
   borderRadius: '$pill',
-  background: 'linear-gradient(90deg, $primary, $accent)',
+  background: 'linear-gradient(90deg, $secondary 0%, $primaryPanel 100%)',
 });
 
 const Row = styled('div', {
@@ -25,7 +25,9 @@ const LabelRow = styled('div', {
   justifyContent: 'space-between',
   gap: '$3',
   fontSize: '$2',
-  color: '$mutedText',
+  color: '$subtleText',
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
 });
 
 export function ProgressBar({ label, value }: { label: string; value: number }) {

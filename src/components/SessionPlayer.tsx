@@ -16,7 +16,7 @@ import { styled } from '../styles/stitches.config';
 
 const Stack = styled('div', {
   display: 'grid',
-  gap: '$5',
+  gap: '$6',
 });
 
 const Meta = styled('div', {
@@ -27,14 +27,34 @@ const Meta = styled('div', {
 
 const Title = styled('h2', {
   margin: 0,
+  fontFamily: '$heading',
   fontSize: '$5',
-  lineHeight: 1.4,
+  lineHeight: 1.25,
+  color: '$primary',
 });
 
 const Notice = styled('div', {
   fontSize: '$2',
   color: '$warning',
   lineHeight: 1.6,
+});
+
+const QuestionCard = styled(Card, {
+  display: 'grid',
+  gap: '$6',
+});
+
+const MetaSection = styled('section', {
+  display: 'grid',
+  gap: '$4',
+});
+
+const Label = styled('div', {
+  color: '$subtleText',
+  fontSize: '$2',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  fontWeight: 700,
 });
 
 function modeLabel(mode: StudyMode, partNo?: number | null) {
@@ -173,7 +193,7 @@ export function SessionPlayer({
   return (
     <Stack>
       {notice ? <Notice>{notice}</Notice> : null}
-      <Card css={{ display: 'grid', gap: '$5' }}>
+      <QuestionCard>
         <Meta>
           <Badge tone="primary">{modeLabel(mode, current.part_no ?? partNo)}</Badge>
           {current.part_no ? <Badge>{current.part_no}편</Badge> : null}
@@ -181,13 +201,13 @@ export function SessionPlayer({
           {current.source_ref ? <Badge>{current.source_ref}</Badge> : null}
         </Meta>
 
-        <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ color: '#777777', fontSize: 14 }}>기준서 제목</div>
+        <MetaSection>
+          <Label>기준서 제목</Label>
           <Title>{current.title}</Title>
-        </div>
+        </MetaSection>
 
         <div style={{ display: 'grid', gap: 12 }}>
-          <label htmlFor="answer" style={{ fontSize: 14, color: '#777777' }}>
+          <label htmlFor="answer" style={{ fontSize: 13, color: '#717976', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
             답안을 직접 작성하세요
           </label>
           <Textarea
@@ -212,7 +232,7 @@ export function SessionPlayer({
             </Button>
           </div>
         ) : null}
-      </Card>
+      </QuestionCard>
 
       {result ? (
         <ResultPanel

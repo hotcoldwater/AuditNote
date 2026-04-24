@@ -2,18 +2,24 @@ import { styled } from '../styles/stitches.config';
 
 export const Textarea = styled('textarea', {
   width: '100%',
-  minHeight: '220px',
+  minHeight: '360px',
   resize: 'vertical',
   border: '1px solid $border',
   borderRadius: '$md',
-  padding: '$4',
-  backgroundColor: '$surface',
+  padding: '$7',
+  backgroundColor: '$panel',
   color: '$text',
-  fontSize: '$3',
-  lineHeight: 1.7,
+  fontSize: '$4',
+  lineHeight: 1.85,
   outline: 'none',
+  boxShadow: '$soft',
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+  '&::placeholder': {
+    color: '$subtleText',
+    fontStyle: 'italic',
+  },
   '&:focus': {
-    borderColor: '$primary',
-    boxShadow: '0 0 0 3px rgba(47, 93, 80, 0.16)',
+    borderColor: '$secondary',
+    boxShadow: '$focus',
   },
 });

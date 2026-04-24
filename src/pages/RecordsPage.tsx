@@ -10,6 +10,24 @@ import { fetchActiveStandards } from '../lib/standards';
 import { listWrongNotes } from '../lib/wrongNotes';
 import type { DashboardStats } from '../types';
 import { Badge } from '../components/Badge';
+import { styled } from '../styles/stitches.config';
+
+const StatsGrid = styled('div', {
+  display: 'grid',
+  gap: '$4',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  '@sm': {
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  },
+});
+
+const SectionTitle = styled('h2', {
+  margin: 0,
+  fontFamily: '$heading',
+  fontSize: '$5',
+  color: '$primary',
+  lineHeight: 1.2,
+});
 
 export function RecordsPage() {
   const { user } = useAuth();
@@ -40,16 +58,16 @@ export function RecordsPage() {
     <Layout title="학습기록" description="클라이언트에서 계산한 MVP 대시보드입니다.">
       {notice ? <Card css={{ color: '$warning' }}>{notice}</Card> : null}
 
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+      <StatsGrid>
         <StatCard title="전체 진행률" value={`${stats.overallProgress}%`} />
         <StatCard title="오늘 푼 문제 수" value={`${stats.todayAttemptCount}개`} />
         <StatCard title="누적 풀이 수" value={`${stats.totalAttempts}회`} />
         <StatCard title="평균 점수" value={`${stats.averageScore}점`} />
         <StatCard title="전체 오답률" value={`${stats.overallWrongRate}%`} />
-      </div>
+      </StatsGrid>
 
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <h2 style={{ margin: 0 }}>최근 7일 학습량</h2>
+        <SectionTitle>최근 7일 학습량</SectionTitle>
         <div style={{ display: 'grid', gap: 12 }}>
           {stats.recent7Days.map((item) => (
             <ProgressBar
@@ -62,13 +80,13 @@ export function RecordsPage() {
       </Card>
 
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <h2 style={{ margin: 0 }}>편별 진행률 / 오답률</h2>
+        <SectionTitle>편별 진행률 / 오답률</SectionTitle>
         <div style={{ display: 'grid', gap: 16 }}>
           {stats.partProgress.map((item) => (
             <div key={item.partNo} style={{ display: 'grid', gap: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <strong>{item.partNo}편</strong>
-                <span style={{ color: '#777777', fontSize: 14 }}>
+                <strong style={{ color: '#01261f' }}>{item.partNo}편</strong>
+                <span style={{ color: '#5f6764', fontSize: 14 }}>
                   {item.solvedCount}/{item.totalCount} · 오답률 {item.wrongRate}%
                 </span>
               </div>
@@ -79,7 +97,7 @@ export function RecordsPage() {
       </Card>
 
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <h2 style={{ margin: 0 }}>LV별 정답률</h2>
+        <SectionTitle>LV별 정답률</SectionTitle>
         <div style={{ display: 'grid', gap: 12 }}>
           {stats.levelAccuracy.map((item) => (
             <ProgressBar key={item.label} label={item.label} value={item.accuracyRate} />
@@ -88,10 +106,10 @@ export function RecordsPage() {
       </Card>
 
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <h2 style={{ margin: 0 }}>자주 틀린 기준서</h2>
+        <SectionTitle>자주 틀린 기준서</SectionTitle>
         <div style={{ display: 'grid', gap: 12 }}>
           {stats.frequentWrongStandards.length === 0 ? (
-            <div style={{ color: '#777777' }}>아직 오답노트가 없습니다.</div>
+            <div style={{ color: '#5f6764' }}>아직 오답노트가 없습니다.</div>
           ) : (
             stats.frequentWrongStandards.map((item) => (
               <div
@@ -112,10 +130,10 @@ export function RecordsPage() {
       </Card>
 
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <h2 style={{ margin: 0 }}>최근 풀이 기록</h2>
+        <SectionTitle>최근 풀이 기록</SectionTitle>
         <div style={{ display: 'grid', gap: 12 }}>
           {stats.recentAttempts.length === 0 ? (
-            <div style={{ color: '#777777' }}>아직 풀이 기록이 없습니다.</div>
+            <div style={{ color: '#5f6764' }}>아직 풀이 기록이 없습니다.</div>
           ) : (
             stats.recentAttempts.map((item) => (
               <div
@@ -128,8 +146,8 @@ export function RecordsPage() {
                 }}
               >
                 <div style={{ display: 'grid', gap: 4 }}>
-                  <strong>{item.standardTitle}</strong>
-                  <span style={{ color: '#777777', fontSize: 14 }}>{item.createdAt.slice(0, 16).replace('T', ' ')}</span>
+                  <strong style={{ color: '#01261f' }}>{item.standardTitle}</strong>
+                  <span style={{ color: '#5f6764', fontSize: 14 }}>{item.createdAt.slice(0, 16).replace('T', ' ')}</span>
                 </div>
                 <Badge
                   tone={

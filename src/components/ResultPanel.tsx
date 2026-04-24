@@ -7,6 +7,9 @@ import { Card } from './Card';
 const Grid = styled('div', {
   display: 'grid',
   gap: '$4',
+  '@sm': {
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  },
 });
 
 const Section = styled('div', {
@@ -16,15 +19,19 @@ const Section = styled('div', {
 
 const Label = styled('div', {
   fontSize: '$2',
-  color: '$mutedText',
+  color: '$subtleText',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  fontWeight: 700,
 });
 
 const Body = styled('div', {
-  backgroundColor: '$surface',
+  backgroundColor: '$panel',
   borderRadius: '$md',
-  padding: '$4',
+  padding: '$5',
   lineHeight: 1.7,
   whiteSpace: 'pre-wrap',
+  border: '1px solid $borderSoft',
 });
 
 function badgeTone(score: number) {
@@ -62,17 +69,19 @@ export function ResultPanel({
   onExit: () => void;
 }) {
   return (
-    <Card css={{ display: 'grid', gap: '$5' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        <Badge tone={badgeTone(result.score) as 'success' | 'primary' | 'warning' | 'danger'}>
-          {result.resultStatus}
-        </Badge>
-        <strong style={{ fontSize: 28 }}>{result.score}점</strong>
-        <span style={{ color: '#777777' }}>{result.feedbackMessage}</span>
+    <Card css={{ display: 'grid', gap: '$6' }}>
+      <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <Badge tone={badgeTone(result.score) as 'success' | 'primary' | 'warning' | 'danger'}>
+            {result.resultStatus}
+          </Badge>
+          <strong style={{ fontSize: 32, fontFamily: 'Newsreader, Noto Serif KR, serif', color: '#01261f' }}>{result.score}점</strong>
+        </div>
+        <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{result.feedbackMessage}</span>
       </div>
 
       {persistenceNotice ? (
-        <div style={{ color: '#B7791F', fontSize: 14, lineHeight: 1.6 }}>{persistenceNotice}</div>
+        <div style={{ color: '#7b5a19', fontSize: 14, lineHeight: 1.6 }}>{persistenceNotice}</div>
       ) : null}
 
       <Grid>

@@ -10,24 +10,74 @@ const Shell = styled('main', {
   minHeight: '100vh',
   display: 'grid',
   placeItems: 'center',
-  padding: '$4',
+  padding: '$6 $4',
+  background:
+    'radial-gradient(circle at top, rgba(255, 218, 211, 0.45), transparent 22%), linear-gradient(180deg, #fdfcf8 0%, $background 42%, #f4f4f2 100%)',
+});
+
+const AuthCard = styled(Card, {
+  width: '100%',
+  maxWidth: '520px',
+  display: 'grid',
+  gap: '$6',
+  padding: '$7',
+  backgroundColor: 'rgba(255,255,255,0.85)',
+  backdropFilter: 'blur(18px)',
+});
+
+const Eyebrow = styled('div', {
+  fontSize: '$2',
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  color: '$subtleText',
+  fontWeight: 700,
+});
+
+const HeroTitle = styled('h1', {
+  margin: 0,
+  fontFamily: '$heading',
+  fontSize: '$6',
+  lineHeight: 1.05,
+  color: '$primary',
+  fontWeight: 600,
+});
+
+const HeroText = styled('p', {
+  margin: 0,
+  color: '$mutedText',
+  lineHeight: 1.8,
 });
 
 const Field = styled('label', {
   display: 'grid',
   gap: '$2',
   fontSize: '$2',
-  color: '$mutedText',
+  color: '$subtleText',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  fontWeight: 700,
 });
 
 const Input = styled('input', {
   width: '100%',
-  minHeight: '50px',
-  padding: '0 $4',
+  minHeight: '56px',
+  padding: '0 $5',
   borderRadius: '$md',
   border: '1px solid $border',
-  backgroundColor: '$surface',
+  backgroundColor: '$panel',
   fontSize: '$3',
+  boxShadow: '$soft',
+  outline: 'none',
+  '&:focus': {
+    borderColor: '$secondary',
+    boxShadow: '$focus',
+  },
+});
+
+const FooterText = styled('div', {
+  fontSize: '$2',
+  color: '$mutedText',
+  lineHeight: 1.7,
 });
 
 export function SignupPage() {
@@ -61,16 +111,15 @@ export function SignupPage() {
 
   return (
     <Shell>
-      <Card css={{ width: '100%', maxWidth: '460px', display: 'grid', gap: '$5' }}>
+      <AuthCard>
         <div style={{ display: 'grid', gap: 8 }}>
-          <h1 style={{ margin: 0, fontSize: 32 }}>회원가입</h1>
-          <p style={{ margin: 0, color: '#777777', lineHeight: 1.6 }}>
-            닉네임을 만들고 바로 학습을 시작할 수 있습니다.
-          </p>
+          <Eyebrow>Join The Notebook</Eyebrow>
+          <HeroTitle>학습용 공간 만들기</HeroTitle>
+          <HeroText>닉네임을 정하고 바로 학습을 시작할 수 있습니다. 회독 기록과 오답노트는 이 계정에 저장됩니다.</HeroText>
         </div>
 
         {!supabaseEnabled ? (
-          <div style={{ color: '#B7791F', fontSize: 14, lineHeight: 1.6 }}>{supabaseDisabledMessage}</div>
+          <div style={{ color: '#7b5a19', fontSize: 14, lineHeight: 1.7 }}>{supabaseDisabledMessage}</div>
         ) : null}
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
@@ -86,16 +135,16 @@ export function SignupPage() {
             닉네임
             <Input value={nickname} onChange={(event) => setNickname(event.target.value)} />
           </Field>
-          {error ? <div style={{ color: '#C0392B', fontSize: 14 }}>{error}</div> : null}
+          {error ? <div style={{ color: '$danger', fontSize: 14 }}>{error}</div> : null}
           <Button type="submit" disabled={submitting}>
             {supabaseEnabled ? '회원가입' : '샘플 계정 만들기'}
           </Button>
         </form>
 
-        <div style={{ fontSize: 14, color: '#777777' }}>
+        <FooterText>
           이미 계정이 있으면 <Link to="/login">로그인</Link>
-        </div>
-      </Card>
+        </FooterText>
+      </AuthCard>
     </Shell>
   );
 }

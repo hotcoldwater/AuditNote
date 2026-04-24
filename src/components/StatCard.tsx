@@ -3,13 +3,18 @@ import { styled } from '../styles/stitches.config';
 
 const Title = styled('div', {
   fontSize: '$2',
-  color: '$mutedText',
+  color: '$subtleText',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  fontWeight: 700,
 });
 
 const Value = styled('div', {
-  fontSize: '$6',
-  fontWeight: 800,
-  lineHeight: 1.1,
+  fontSize: '$5',
+  fontFamily: '$heading',
+  fontWeight: 600,
+  lineHeight: 1.15,
+  color: '$primary',
 });
 
 const Description = styled('div', {
@@ -27,7 +32,7 @@ export function StatCard({
   description?: string;
 }) {
   return (
-    <Card css={{ display: 'grid', gap: '$3', padding: '$5' }}>
+    <Card css={{ display: 'grid', gap: '$3', padding: '$5', backgroundColor: '$surface', minHeight: '150px' }}>
       <Title>{title}</Title>
       <Value>{value}</Value>
       {description ? <Description>{description}</Description> : null}
