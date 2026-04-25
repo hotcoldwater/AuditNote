@@ -1,5 +1,6 @@
 import type { GradingMetadata, RuleScoringResult, ScoringResult } from '../types';
 import { deriveResultStatus, isSkippedAnswer, normalizeScoringResult } from './scoring';
+import { isSupabaseConfigured, supabase } from './supabase';
 
 const GRADING_VERSION = '2026-04-25-v1';
 const AI_WEIGHT = 0.7;
@@ -25,6 +26,8 @@ interface GradeApiResponse {
   metadata?: Partial<GradingMetadata>;
   error?: string;
 }
+
+const GRADE_API_PATH = '/api/grade';
 
 function clampScore(score: number) {
   if (!Number.isFinite(score)) {
@@ -373,6 +376,41 @@ function normalizeGradeErrorMessage(message: string) {
   return normalized || 'AI채점 응답을 처리하지 못했습니다.';
 }
 
+async function invokeSupabaseGrade(input: GradeAnswerInput) {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase.functions.invoke('grade', {
+    body: input,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Supabase Edge Function 호출에 실패했습니다.');
+  }
+
+  return data as GradeApiResponse;
+}
+
+async function invokePagesGrade(input: GradeAnswerInput) {
+  const response = await fetch(GRADE_API_PATH, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  let data: GradeApiResponse | null = null;
+  try {
+    data = (await response.json()) as GradeApiResponse;
+  } catch {
+    data = null;
+  }
+
+  return { response, data };
+}
+
 function buildSkippedResult() {
   const result = normalizeScoringResult({
     score: 0,
@@ -403,55 +441,61 @@ export async function gradeAnswer(input: GradeAnswerInput): Promise<{
     return buildSkippedResult();
   }
 
-  let response: Response;
   try {
-    response = await fetch('/api/grade', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    let data: GradeApiResponse | null = null;
+
+    try {
+      data = await invokeSupabaseGrade(input);
+    } catch {
+      data = null;
+    }
+
+    if (!data?.result) {
+      try {
+        const pagesResult = await invokePagesGrade(input);
+        if (!pagesResult.response.ok || !pagesResult.data?.result) {
+          const normalizedError = normalizeGradeErrorMessage(
+            pagesResult.data?.error || 'AI채점 응답을 처리하지 못했습니다.',
+          );
+          return buildLocalFallbackResult(input, normalizedError);
+        }
+        data = pagesResult.data;
+      } catch (error) {
+        return buildLocalFallbackResult(
+          input,
+          normalizeGradeErrorMessage(error instanceof Error ? error.message : `Failed to fetch ${GRADE_API_PATH}`),
+        );
+      }
+    }
+
+    const resultPayload = data.result!;
+    const ruleScore = computeRuleScore(input);
+    const aiScore = typeof resultPayload.score === 'number' ? resultPayload.score : Number.NaN;
+    const status = resultPayload.resultStatus;
+    if (!Number.isFinite(aiScore) || !['EXCELLENT', 'CORRECT', 'REVIEW', 'WRONG', 'SKIPPED'].includes(String(status))) {
+      return buildLocalFallbackResult(input, 'invalid_ai_payload');
+    }
+
+    const result = finalizeResult(resultPayload, ruleScore, blendScore(aiScore, ruleScore.score));
+
+    return {
+      result,
+      metadata: {
+        gradingMethod: data.metadata?.gradingMethod ?? 'ai',
+        gradingModel: data.metadata?.gradingModel ?? null,
+        gradingVersion: data.metadata?.gradingVersion ?? GRADING_VERSION,
+        fallbackNotice: data.metadata?.fallbackNotice ?? null,
+        rawGradingResult: data.metadata?.rawGradingResult ?? {
+          gradingVersion: GRADING_VERSION,
+          ruleScore,
+          aiResult: resultPayload,
+        },
       },
-      body: JSON.stringify(input),
-    });
+    };
   } catch (error) {
     return buildLocalFallbackResult(
       input,
-      normalizeGradeErrorMessage(error instanceof Error ? error.message : 'Failed to fetch /api/grade'),
+      normalizeGradeErrorMessage(error instanceof Error ? error.message : 'AI채점 처리 중 알 수 없는 오류가 발생했습니다.'),
     );
   }
-
-  let data: GradeApiResponse | null = null;
-  try {
-    data = (await response.json()) as GradeApiResponse;
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok || !data?.result) {
-    const normalizedError = normalizeGradeErrorMessage(data?.error || 'AI채점 응답을 처리하지 못했습니다.');
-    return buildLocalFallbackResult(input, normalizedError);
-  }
-
-  const ruleScore = computeRuleScore(input);
-  const aiScore = typeof data.result.score === 'number' ? data.result.score : Number.NaN;
-  const status = data.result.resultStatus;
-  if (!Number.isFinite(aiScore) || !['EXCELLENT', 'CORRECT', 'REVIEW', 'WRONG', 'SKIPPED'].includes(String(status))) {
-    return buildLocalFallbackResult(input, 'invalid_ai_payload');
-  }
-
-  const result = finalizeResult(data.result, ruleScore, blendScore(aiScore, ruleScore.score));
-
-  return {
-    result,
-    metadata: {
-      gradingMethod: data.metadata?.gradingMethod ?? 'ai',
-      gradingModel: data.metadata?.gradingModel ?? null,
-      gradingVersion: data.metadata?.gradingVersion ?? GRADING_VERSION,
-      fallbackNotice: data.metadata?.fallbackNotice ?? null,
-      rawGradingResult: data.metadata?.rawGradingResult ?? {
-        gradingVersion: GRADING_VERSION,
-        ruleScore,
-        aiResult: data.result,
-      },
-    },
-  };
 }

@@ -139,6 +139,27 @@ SPA 라우팅을 위해 `public/_redirects`가 포함되어 있습니다.
 3. Environment Variables에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`를 넣습니다.
 4. 배포 후 Supabase Auth Redirect URL에 Pages 도메인을 추가합니다.
 
+## AI채점 배포 권장 구조
+
+현재 앱은 AI채점을 아래 순서로 시도합니다.
+
+1. Supabase Edge Function `grade`
+2. Cloudflare Pages Function `/api/grade`
+3. 로컬 규칙 기반 fallback
+
+커스텀 도메인에서 Cloudflare edge 지역 문제로 OpenAI 호출이 막힐 수 있으므로,
+운영 환경에서는 Supabase Edge Function을 우선 배포하는 것을 권장합니다.
+
+필수 설정:
+
+```bash
+supabase functions deploy grade
+supabase secrets set OPENAI_API_KEY=YOUR_KEY
+supabase secrets set OPENAI_MODEL=gpt-5-nano-2025-08-07
+```
+
+이 함수는 [supabase/functions/grade/index.ts](./supabase/functions/grade/index.ts) 에 있습니다.
+
 ## MVP에서 제외한 기능
 
 - AI 채점
