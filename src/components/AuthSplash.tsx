@@ -32,7 +32,7 @@ const LogoHalo = styled('div', {
 const LogoFrame = styled('div', {
   width: '112px',
   height: '112px',
-  borderRadius: '$xl',
+  borderRadius: '32px',
   display: 'grid',
   placeItems: 'center',
   backgroundColor: 'rgba(255,255,255,0.9)',

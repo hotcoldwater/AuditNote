@@ -35,8 +35,16 @@ const TopBarInner = styled('div', {
 });
 
 const Brand = styled('div', {
-  display: 'grid',
-  gap: '$1',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '$3',
+});
+
+const BrandIcon = styled('img', {
+  width: '34px',
+  height: '34px',
+  borderRadius: '12px',
+  display: 'block',
 });
 
 const BrandName = styled('div', {
@@ -166,6 +174,7 @@ export function Layout({
       <TopBar>
         <TopBarInner>
           <Brand>
+            <BrandIcon src="/favicon.svg" alt="" />
             <BrandName>AuditNote</BrandName>
           </Brand>
           <NavGroup>
