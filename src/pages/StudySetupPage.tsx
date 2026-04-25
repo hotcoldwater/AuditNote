@@ -92,6 +92,28 @@ const ActionRow = styled('div', {
   flexWrap: 'wrap',
 });
 
+const FilterLabel = styled('label', {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '$2',
+  width: 'fit-content',
+  minHeight: '44px',
+  padding: '0 14px',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
+  color: '$primary',
+  fontSize: '$2',
+  fontWeight: 700,
+  cursor: 'pointer',
+});
+
+const FilterCheckbox = styled('input', {
+  width: '16px',
+  height: '16px',
+  margin: 0,
+  accentColor: '$primary',
+});
+
 const ListCard = styled(Card, {
   display: 'grid',
   gap: '$4',
@@ -187,6 +209,7 @@ export function StudySetupPage() {
   const [setupMode, setSetupMode] = useState<SetupMode>(null);
   const [selectedPartNo, setSelectedPartNo] = useState<number | null>(null);
   const [selectedChapterNo, setSelectedChapterNo] = useState<number | null>(null);
+  const [examOnly, setExamOnly] = useState(false);
 
   useEffect(() => {
     fetchActiveStandards().then((payload) => {
@@ -233,6 +256,14 @@ export function StudySetupPage() {
                 <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
                   방식 다시 선택
                 </Button>
+                <FilterLabel>
+                  <FilterCheckbox
+                    type="checkbox"
+                    checked={examOnly}
+                    onChange={(event) => setExamOnly(event.target.checked)}
+                  />
+                  기출만
+                </FilterLabel>
               </ActionRow>
             </HeaderCard>
 
@@ -240,7 +271,7 @@ export function StudySetupPage() {
               {getOrderedStudyParts().map((partNo) => (
                 <StudyButton
                   key={partNo}
-                  onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}`)}
+                  onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}${examOnly ? '&examOnly=1' : ''}`)}
                   disabled={!parts.includes(partNo)}
                 >
                   <ButtonLabel>{partNo}편</ButtonLabel>
@@ -248,13 +279,9 @@ export function StudySetupPage() {
                 </StudyButton>
               ))}
 
-              <StudyButton onClick={() => navigate('/study/play?mode=random')}>
+              <StudyButton onClick={() => navigate(`/study/play?mode=random${examOnly ? '&examOnly=1' : ''}`)}>
                 <ButtonLabel>전체</ButtonLabel>
                 <ButtonTitle>전체 범위 랜덤</ButtonTitle>
-              </StudyButton>
-              <StudyButton onClick={() => navigate('/study/play?mode=random&examOnly=1')}>
-                <ButtonLabel>기출만</ButtonLabel>
-                <ButtonTitle>기출된 기준서만 랜덤 출제</ButtonTitle>
               </StudyButton>
             </ChoiceGrid>
           </Stack>
