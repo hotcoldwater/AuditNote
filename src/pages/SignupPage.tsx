@@ -11,8 +11,7 @@ const Shell = styled('main', {
   display: 'grid',
   placeItems: 'center',
   padding: '$6 $4',
-  background:
-    'radial-gradient(circle at top, rgba(200, 220, 255, 0.68), transparent 22%), linear-gradient(180deg, #ffffff 0%, $background 42%, #eef4fd 100%)',
+  backgroundColor: '$background',
 });
 
 const AuthCard = styled(Card, {
@@ -31,7 +30,7 @@ const BrandMark = styled('div', {
   display: 'grid',
   placeItems: 'center',
   borderRadius: '24px',
-  background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(232, 241, 255, 0.96) 100%)',
+  backgroundColor: '$panel',
   border: '1px solid rgba(194, 212, 241, 0.78)',
   boxShadow: '0 18px 45px rgba(23, 61, 122, 0.12)',
   justifySelf: 'center',

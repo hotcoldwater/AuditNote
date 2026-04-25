@@ -56,10 +56,8 @@ const LocationBlock = styled('div', {
   gap: '$2',
   padding: '$5',
   borderRadius: '$xl',
-  background:
-    'linear-gradient(180deg, rgba(240, 246, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%)',
+  backgroundColor: '$panel',
   border: '1px solid rgba(112, 146, 214, 0.16)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75)',
 });
 
 const PartLine = styled('div', {
@@ -96,9 +94,6 @@ const Notice = styled('div', {
 const QuestionCard = styled(Card, {
   display: 'grid',
   gap: '$6',
-  '&::before': {
-    display: 'none',
-  },
 });
 
 const MetaSection = styled('section', {

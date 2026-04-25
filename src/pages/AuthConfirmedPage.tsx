@@ -18,9 +18,6 @@ const ConfirmCard = styled(Card, {
   justifyItems: 'center',
   textAlign: 'center',
   backgroundColor: 'rgba(255,255,255,0.94)',
-  '&::before': {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0) 34%)',
-  },
 });
 
 const Title = styled('h2', {

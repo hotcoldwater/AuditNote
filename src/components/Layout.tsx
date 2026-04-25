@@ -6,8 +6,7 @@ import { useAuth } from '../lib/auth';
 
 const Shell = styled('div', {
   minHeight: '100vh',
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.66) 0px, rgba(255,255,255,0) 220px)',
+  backgroundColor: '$background',
 });
 
 const TopBar = styled('header', {

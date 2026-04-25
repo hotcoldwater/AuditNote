@@ -8,12 +8,4 @@ export const Card = styled('section', {
   padding: '$6',
   position: 'relative',
   overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    background:
-      'linear-gradient(180deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0) 40%)',
-    pointerEvents: 'none',
-  },
 });

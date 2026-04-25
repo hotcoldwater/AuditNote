@@ -18,8 +18,7 @@ const Stack = styled('div', {
 const HeroCard = styled(Card, {
   display: 'grid',
   gap: '$2',
-  background:
-    'radial-gradient(circle at top right, rgba(200, 220, 255, 0.78), rgba(200, 220, 255, 0) 32%), linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,246,253,0.98) 100%)',
+  backgroundColor: '$panel',
 });
 
 const HeroTitle = styled('h2', {

@@ -21,21 +21,6 @@ const ControlsCard = styled(Card, {
   gap: '$4',
 });
 
-const SearchInput = styled('input', {
-  width: '100%',
-  minHeight: '52px',
-  padding: '0 $5',
-  border: '1px solid $border',
-  backgroundColor: '$panel',
-  color: '$text',
-  fontSize: '$3',
-  outline: 'none',
-  '&:focus': {
-    borderColor: '$secondary',
-    boxShadow: '$focus',
-  },
-});
-
 const FilterRow = styled('div', {
   display: 'flex',
   gap: '$2',
@@ -188,9 +173,10 @@ export function RecordsPage() {
   const [loading, setLoading] = useState(true);
   const [busyAttemptId, setBusyAttemptId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [recentOpen, setRecentOpen] = useState(true);
+  const [frequentWrongOpen, setFrequentWrongOpen] = useState(true);
   const [unresolvedWrongCount, setUnresolvedWrongCount] = useState(0);
 
   async function loadDashboard() {
@@ -277,23 +263,18 @@ export function RecordsPage() {
     if (!stats) {
       return [];
     }
-
-    const query = searchQuery.trim().toLowerCase();
     return stats.recentAttempts.filter((item) => {
-      const matchesQuery = !query || item.standardTitle.toLowerCase().includes(query);
       const matchesStatus = statusFilter === 'ALL' || item.resultStatus === statusFilter;
-      return matchesQuery && matchesStatus;
+      return matchesStatus;
     });
-  }, [searchQuery, stats, statusFilter]);
+  }, [stats, statusFilter]);
 
   const filteredWrongStandards = useMemo(() => {
     if (!stats) {
       return [];
     }
-
-    const query = searchQuery.trim().toLowerCase();
-    return stats.frequentWrongStandards.filter((item) => !query || item.standardTitle.toLowerCase().includes(query));
-  }, [searchQuery, stats]);
+    return stats.frequentWrongStandards.filter((item) => item.wrongCount >= 2);
+  }, [stats]);
 
   if (loading || !stats) {
     return <Layout title="기록 노트">불러오는 중...</Layout>;
@@ -302,11 +283,6 @@ export function RecordsPage() {
   return (
     <Layout title="기록 노트" description="학습 기록과 오답 흐름을 확인합니다.">
       <ControlsCard>
-        <SearchInput
-          placeholder="기준서 검색"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-        />
         <FilterRow>
           {FILTERS.map((item) => (
             <Button
@@ -335,73 +311,87 @@ export function RecordsPage() {
 
       <SectionCard>
         <SectionHeader>
-          <SectionTitle>최근 기록</SectionTitle>
-          <SectionDescription>최근 풀이 내역</SectionDescription>
+          <div style={{ display: 'grid', gap: 4 }}>
+            <SectionTitle>최근 기록</SectionTitle>
+            <SectionDescription>최근 풀이 내역</SectionDescription>
+          </div>
+          <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => setRecentOpen((prev) => !prev)}>
+            {recentOpen ? '닫기' : '열기'}
+          </Button>
         </SectionHeader>
-        <RecordList>
-          {filteredRecentAttempts.length === 0 ? (
-            <EmptyState>조건에 맞는 최근 기록이 없습니다.</EmptyState>
-          ) : (
-            filteredRecentAttempts.map((item: RecentStudyItem) => (
-              <RecordRow key={item.id}>
-                <RecordMeta>
-                  <RecordTitle>{item.standardTitle}</RecordTitle>
-                  <RecordSub>
-                    <Badge tone={toneForStatus(item.resultStatus)}>{item.resultStatus}</Badge>
-                    <span>{`${item.score}점`}</span>
-                    <span>{modeLabel(item.mode)}</span>
-                  </RecordSub>
-                  <RecordDate>{formatStamp(item.createdAt)}</RecordDate>
-                </RecordMeta>
-                <Actions>
-                  <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => goToReplay(item.standardId)}>
-                    다시 풀기
-                  </Button>
-                  <Button
-                    tone="ghost"
-                    css={{ width: 'auto', minHeight: '42px' }}
-                    disabled={busyAttemptId === item.id}
-                    onClick={() => void handleDeleteAttempt(item.id)}
-                  >
-                    {busyAttemptId === item.id ? '삭제 중...' : '삭제'}
-                  </Button>
-                </Actions>
-              </RecordRow>
-            ))
-          )}
-        </RecordList>
+        {recentOpen ? (
+          <RecordList>
+            {filteredRecentAttempts.length === 0 ? (
+              <EmptyState>조건에 맞는 최근 기록이 없습니다.</EmptyState>
+            ) : (
+              filteredRecentAttempts.map((item: RecentStudyItem) => (
+                <RecordRow key={item.id}>
+                  <RecordMeta>
+                    <RecordTitle>{item.standardTitle}</RecordTitle>
+                    <RecordSub>
+                      <Badge tone={toneForStatus(item.resultStatus)}>{item.resultStatus}</Badge>
+                      <span>{`${item.score}점`}</span>
+                      <span>{modeLabel(item.mode)}</span>
+                    </RecordSub>
+                    <RecordDate>{formatStamp(item.createdAt)}</RecordDate>
+                  </RecordMeta>
+                  <Actions>
+                    <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => goToReplay(item.standardId)}>
+                      다시 풀기
+                    </Button>
+                    <Button
+                      tone="ghost"
+                      css={{ width: 'auto', minHeight: '42px' }}
+                      disabled={busyAttemptId === item.id}
+                      onClick={() => void handleDeleteAttempt(item.id)}
+                    >
+                      {busyAttemptId === item.id ? '삭제 중...' : '삭제'}
+                    </Button>
+                  </Actions>
+                </RecordRow>
+              ))
+            )}
+          </RecordList>
+        ) : null}
       </SectionCard>
 
       <SectionCard>
         <SectionHeader>
-          <SectionTitle>다시 볼 기준서</SectionTitle>
-          <SectionDescription>미해결 오답 기준</SectionDescription>
+          <div style={{ display: 'grid', gap: 4 }}>
+            <SectionTitle>자주 틀린 기준서</SectionTitle>
+            <SectionDescription>2회 이상 틀린 기준서</SectionDescription>
+          </div>
+          <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => setFrequentWrongOpen((prev) => !prev)}>
+            {frequentWrongOpen ? '닫기' : '열기'}
+          </Button>
         </SectionHeader>
-        <RecordList>
-          {filteredWrongStandards.length === 0 ? (
-            <EmptyState>현재 다시 볼 기준서가 없습니다.</EmptyState>
-          ) : (
-            filteredWrongStandards.map((item) => (
-              <RecordRow key={item.standardId}>
-                <RecordMeta>
-                  <RecordTitle>{item.standardTitle}</RecordTitle>
-                  <RecordSub>
-                    <span>{`${item.wrongCount}회 틀림`}</span>
-                    <span>{`최근 ${item.lastAttemptedAt ? item.lastAttemptedAt.slice(0, 10).replace(/-/g, '.') : '-'}`}</span>
-                  </RecordSub>
-                </RecordMeta>
-                <Actions>
-                  <Button tone="ghost" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate('/wrong-notes')}>
-                    오답 보기
-                  </Button>
-                  <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate(`/wrong/play?standardId=${item.standardId}&scope=all`)}>
-                    다시 풀기
-                  </Button>
-                </Actions>
-              </RecordRow>
-            ))
-          )}
-        </RecordList>
+        {frequentWrongOpen ? (
+          <RecordList>
+            {filteredWrongStandards.length === 0 ? (
+              <EmptyState>현재 자주 틀린 기준서가 없습니다.</EmptyState>
+            ) : (
+              filteredWrongStandards.map((item) => (
+                <RecordRow key={item.standardId}>
+                  <RecordMeta>
+                    <RecordTitle>{item.standardTitle}</RecordTitle>
+                    <RecordSub>
+                      <span>{`${item.wrongCount}회 틀림`}</span>
+                      <span>{`최근 ${item.lastAttemptedAt ? item.lastAttemptedAt.slice(0, 10).replace(/-/g, '.') : '-'}`}</span>
+                    </RecordSub>
+                  </RecordMeta>
+                  <Actions>
+                    <Button tone="ghost" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate('/wrong-notes')}>
+                      오답 보기
+                    </Button>
+                    <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate(`/wrong/play?standardId=${item.standardId}&scope=all`)}>
+                      다시 풀기
+                    </Button>
+                  </Actions>
+                </RecordRow>
+              ))
+            )}
+          </RecordList>
+        ) : null}
       </SectionCard>
 
       <SectionCard>

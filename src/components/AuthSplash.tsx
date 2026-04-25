@@ -5,8 +5,7 @@ const Shell = styled('main', {
   display: 'grid',
   placeItems: 'center',
   padding: '$6 $4',
-  background:
-    'radial-gradient(circle at 50% 26%, rgba(120, 163, 240, 0.28), transparent 24%), radial-gradient(circle at 18% 18%, rgba(211, 228, 255, 0.82), transparent 16%), radial-gradient(circle at 82% 22%, rgba(229, 239, 255, 0.9), transparent 18%), linear-gradient(180deg, #ffffff 0%, #f5f9ff 46%, #edf3fd 100%)',
+  backgroundColor: '$background',
 });
 
 const SplashCard = styled('div', {
@@ -25,8 +24,7 @@ const LogoHalo = styled('div', {
   display: 'grid',
   placeItems: 'center',
   borderRadius: '50%',
-  background:
-    'radial-gradient(circle, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.74) 48%, rgba(255,255,255,0.14) 72%, rgba(255,255,255,0) 100%)',
+  backgroundColor: 'transparent',
 });
 
 const LogoFrame = styled('div', {
