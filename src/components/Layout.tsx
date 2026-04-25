@@ -61,7 +61,7 @@ const Inner = styled('div', {
   width: '100%',
   maxWidth: '960px',
   margin: '0 auto',
-  padding: '$7 $4 $9',
+  padding: '$7 $4 $7',
   display: 'grid',
   gap: '$6',
   '@sm': {
@@ -121,17 +121,12 @@ const NavGroup = styled('div', {
 });
 
 const MobileNav = styled('nav', {
-  position: 'fixed',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  zIndex: 40,
   display: 'flex',
   justifyContent: 'space-around',
   alignItems: 'center',
   gap: '$2',
-  padding: '$2 $4 $6',
-  borderTop: '1px solid $borderSoft',
+  padding: '$2 $4',
+  borderBottom: '1px solid $borderSoft',
   backgroundColor: 'rgba(250, 249, 247, 0.96)',
   backdropFilter: 'blur(18px)',
   '@sm': {
@@ -193,6 +188,20 @@ export function Layout({
             </Badge>
           </ProfileLink>
         </TopBarInner>
+        <MobileNav>
+          <MobileNavLink to="/" className={location.pathname === '/' ? 'active' : ''}>
+            <span className="material-symbols-outlined">home</span>
+            <span>학습노트</span>
+          </MobileNavLink>
+          <MobileNavLink to="/wrong-notes" className={location.pathname.startsWith('/wrong') ? 'active' : ''}>
+            <span className="material-symbols-outlined">note_stack</span>
+            <span>오답노트</span>
+          </MobileNavLink>
+          <MobileNavLink to="/records" className={location.pathname === '/records' ? 'active' : ''}>
+            <span className="material-symbols-outlined">menu_book</span>
+            <span>기록노트</span>
+          </MobileNavLink>
+        </MobileNav>
       </TopBar>
       <Inner>
         <Header>
@@ -200,20 +209,6 @@ export function Layout({
         </Header>
         {children}
       </Inner>
-      <MobileNav>
-        <MobileNavLink to="/" className={location.pathname === '/' ? 'active' : ''}>
-          <span className="material-symbols-outlined">home</span>
-          <span>학습노트</span>
-        </MobileNavLink>
-        <MobileNavLink to="/wrong-notes" className={location.pathname.startsWith('/wrong') ? 'active' : ''}>
-          <span className="material-symbols-outlined">note_stack</span>
-          <span>오답노트</span>
-        </MobileNavLink>
-        <MobileNavLink to="/records" className={location.pathname === '/records' ? 'active' : ''}>
-          <span className="material-symbols-outlined">menu_book</span>
-          <span>기록노트</span>
-        </MobileNavLink>
-      </MobileNav>
     </Shell>
   );
 }
