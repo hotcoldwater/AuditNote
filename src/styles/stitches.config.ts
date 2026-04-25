@@ -36,11 +36,11 @@ export const { styled, css, globalCss, theme } = createStitches({
       mono: '"SFMono-Regular", Consolas, monospace',
     },
     radii: {
-      sm: '8px',
-      md: '12px',
-      lg: '18px',
-      xl: '24px',
-      pill: '9999px',
+      sm: '0px',
+      md: '0px',
+      lg: '0px',
+      xl: '0px',
+      pill: '0px',
     },
     space: {
       1: '4px',

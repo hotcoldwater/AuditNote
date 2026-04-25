@@ -19,6 +19,27 @@ import { upsertWrongNote } from './wrongNotes';
 
 const SUPABASE_TIMEOUT_MS = 12000;
 
+function formatSupabaseError(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message === 'SUPABASE_TIMEOUT') {
+      return 'Supabase 응답 시간이 초과되었습니다.';
+    }
+    return error.message;
+  }
+
+  if (error && typeof error === 'object') {
+    const message = 'message' in error ? error.message : undefined;
+    const details = 'details' in error ? error.details : undefined;
+    const hint = 'hint' in error ? error.hint : undefined;
+    const parts = [message, details, hint].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    if (parts.length > 0) {
+      return parts.join(' / ');
+    }
+  }
+
+  return '알 수 없는 오류';
+}
+
 function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
   return Promise.race<T>([
     Promise.resolve(promise),
@@ -347,7 +368,7 @@ export async function recordStudyOutcome(
     persistLocalAttempt(userId, attempt);
     persistLocalStats(userId, nextStat);
     if (scoring.shouldAddWrongNote) {
-      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI 채점 결과에 따른 자동 등록');
+      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI채점 결과에 따른 자동 등록');
     }
     notice = message;
     return { attempt, stats: nextStat, notice };
@@ -356,6 +377,8 @@ export async function recordStudyOutcome(
   if (!isSupabaseConfigured || !supabase) {
     return localPersist('Supabase 환경변수가 없어 브라우저 로컬에만 저장했습니다.');
   }
+
+  let saveStage = '현재 학습 상태 조회';
 
   try {
     const { data: currentStatsRow } = await withTimeout(
@@ -376,12 +399,14 @@ export async function recordStudyOutcome(
       userAnswer,
     );
 
+    saveStage = '풀이 기록 저장';
     const { error: attemptError } = await insertStudyAttemptWithFallback(attempt);
 
     if (attemptError) {
       throw attemptError;
     }
 
+    saveStage = '문항별 누적 통계 저장';
     const { error: statsError } = await withTimeout(
       supabase.from('user_standard_stats').upsert(nextStat, { onConflict: 'user_id,standard_id' }),
       SUPABASE_TIMEOUT_MS,
@@ -392,12 +417,15 @@ export async function recordStudyOutcome(
     }
 
     if (scoring.shouldAddWrongNote) {
-      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI 채점 결과에 따른 자동 등록');
+      saveStage = '오답노트 저장';
+      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI채점 결과에 따른 자동 등록');
     }
 
     return { attempt, stats: nextStat, notice };
-  } catch {
-    return localPersist('Supabase 저장에 실패하여 브라우저 로컬에 임시 저장했습니다.');
+  } catch (error) {
+    return localPersist(
+      `Supabase 저장에 실패하여 브라우저 로컬에 임시 저장했습니다. [${saveStage}] ${formatSupabaseError(error)}`,
+    );
   }
 }
 

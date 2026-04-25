@@ -13,7 +13,7 @@ function renderBootstrapError(message: string) {
 
   root.innerHTML = `
     <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#F8F5EF;color:#222222;font-family:Pretendard,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;">
-      <div style="max-width:560px;width:100%;background:#FFFFFF;border:1px solid #E5E0D8;border-radius:18px;padding:24px;line-height:1.7;">
+      <div style="max-width:560px;width:100%;background:#FFFFFF;border:1px solid #E5E0D8;border-radius:0;padding:24px;line-height:1.7;">
         <h1 style="margin:0 0 12px 0;font-size:28px;">AuditNote</h1>
         <strong style="display:block;margin-bottom:8px;">앱 초기화 오류</strong>
         <div style="white-space:pre-wrap;">${message}</div>

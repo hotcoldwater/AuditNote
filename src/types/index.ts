@@ -1,4 +1,5 @@
 export type ResultStatus = 'EXCELLENT' | 'CORRECT' | 'REVIEW' | 'WRONG' | 'SKIPPED';
+export type GradingMethod = 'ai' | 'rule' | 'rule-fallback';
 
 export type StudyMode = 'RANDOM' | 'PART' | 'WRONG_NOTE';
 
@@ -21,6 +22,7 @@ export interface Standard {
   exam_years: string[];
   required_keywords: string[];
   optional_keywords: string[];
+  wrong_concepts?: string[] | string | null;
   tags: string[];
   is_active: boolean;
   check_status: string;
@@ -83,13 +85,36 @@ export interface ScoringResult {
   score: number;
   resultStatus: ResultStatus;
   reason: string;
+  goodPart: string;
+  badPart: string;
+  missingPoints?: string[];
+  wrongConcepts?: string[];
+  shouldRecommendReview?: boolean;
   shouldAddWrongNote: boolean;
 }
 
 export interface GradingMetadata {
-  gradingMethod: string;
+  gradingMethod: GradingMethod;
   gradingModel: string | null;
+  gradingVersion?: string;
+  fallbackNotice?: string | null;
   rawGradingResult: Record<string, unknown> | null;
+}
+
+export interface RuleScoringResult {
+  score: number;
+  missingPoints: string[];
+  includedRequiredKeywords: string[];
+  includedOptionalKeywords: string[];
+  answerLengthRatio: number;
+  similarityScore: number;
+  isKeywordListOnly: boolean;
+  hasCriticalWrongConcepts: boolean;
+  detectedWrongConcepts: string[];
+}
+
+export interface AIGradingResult extends ScoringResult {
+  gradingMethod?: GradingMethod;
 }
 
 export interface AuthUser {

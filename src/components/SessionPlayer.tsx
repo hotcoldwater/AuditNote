@@ -7,7 +7,7 @@ import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/ques
 import { getStandardLocationLines } from '../lib/standardDisplay';
 import { fetchActiveStandards } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
-import type { ScoringResult, Standard, StudyMode } from '../types';
+import type { GradingMetadata, ScoringResult, Standard, StudyMode } from '../types';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResultPanel } from './ResultPanel';
@@ -25,6 +25,29 @@ const Title = styled('h2', {
   fontSize: '$5',
   lineHeight: 1.26,
   color: '$primary',
+});
+
+const TitleRow = styled('div', {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '$3',
+  flexWrap: 'wrap',
+});
+
+const LevelBox = styled('span', {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '48px',
+  minHeight: '34px',
+  padding: '0 12px',
+  border: '1px solid $border',
+  backgroundColor: '$primarySoft',
+  color: '$primary',
+  fontSize: '$2',
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
 });
 
 const LocationBlock = styled('div', {
@@ -99,6 +122,7 @@ export function SessionPlayer({
   const [current, setCurrent] = useState<Standard | null>(null);
   const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<ScoringResult | null>(null);
+  const [gradingMetadata, setGradingMetadata] = useState<GradingMetadata | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function loadQuestion(excludeStandardId?: string | null) {
@@ -109,6 +133,7 @@ export function SessionPlayer({
 
     setLoading(true);
     setResult(null);
+    setGradingMetadata(null);
     setAnswer('');
     setSubmitNotice(undefined);
 
@@ -167,13 +192,17 @@ export function SessionPlayer({
         title: current.title,
         correctAnswer: current.answer,
         userAnswer: submittedAnswer,
+        requiredKeywords: current.required_keywords,
+        optionalKeywords: current.optional_keywords,
+        wrongConcepts: current.wrong_concepts,
       });
 
       const outcome = await recordStudyOutcome(user.id, current, submittedAnswer, scoring, mode, metadata);
       setResult(scoring);
+      setGradingMetadata(metadata);
       setSubmitNotice(outcome.notice);
     } catch (error) {
-      setSubmitNotice(error instanceof Error ? error.message : 'AI 채점에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      setSubmitNotice(error instanceof Error ? error.message : 'AI채점에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
     }
@@ -228,7 +257,10 @@ export function SessionPlayer({
               return <SectionLine key={line}>{line}</SectionLine>;
             })}
           </LocationBlock>
-          <Title>{`Lv${current.level}. ${current.title}`}</Title>
+          <TitleRow>
+            <LevelBox>{`Lv${current.level}`}</LevelBox>
+            <Title>{current.title}</Title>
+          </TitleRow>
         </MetaSection>
 
         <div>
@@ -244,10 +276,10 @@ export function SessionPlayer({
         {!result ? (
           <div style={{ display: 'grid', gap: 12 }}>
             <Button onClick={() => void submitAnswer(answer)} disabled={!current || submitting}>
-              {submitting ? '채점 중...' : '제출'}
+              {submitting ? 'AI채점 중...' : 'AI채점'}
             </Button>
             <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
-              모르겠어요
+              SKIP
             </Button>
             <Button tone="secondary" onClick={() => navigate('/')} disabled={submitting}>
               학습 종료
@@ -261,6 +293,7 @@ export function SessionPlayer({
           standard={current}
           userAnswer={answer}
           result={result}
+          metadata={gradingMetadata}
           onAddWrongNote={handleManualWrongNote}
           onNext={() => void loadQuestion(current.id)}
           onExit={() => navigate('/')}
