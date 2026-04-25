@@ -106,6 +106,39 @@ function badgeTone(score: number) {
   return 'danger';
 }
 
+function buildDetailFeedback(metadata: GradingMetadata | null) {
+  const raw = metadata?.rawGradingResult;
+  const ruleScore = raw && typeof raw === 'object' && 'ruleScore' in raw ? raw.ruleScore : null;
+
+  if (!ruleScore || typeof ruleScore !== 'object') {
+    return null;
+  }
+
+  const missingPoints =
+    'missingPoints' in ruleScore && Array.isArray(ruleScore.missingPoints)
+      ? ruleScore.missingPoints.map((item) => String(item).trim()).filter(Boolean)
+      : [];
+  const wrongConcepts =
+    'detectedWrongConcepts' in ruleScore && Array.isArray(ruleScore.detectedWrongConcepts)
+      ? ruleScore.detectedWrongConcepts.map((item) => String(item).trim()).filter(Boolean)
+      : [];
+
+  if (missingPoints.length === 0 && wrongConcepts.length === 0) {
+    return null;
+  }
+
+  const missingText =
+    missingPoints.length > 0
+      ? `부족한 키워드는 ${missingPoints.slice(0, 4).join(', ')}${missingPoints.length > 4 ? ' 등' : ''}입니다.`
+      : '';
+  const wrongConceptText =
+    wrongConcepts.length > 0
+      ? `주의할 오개념은 ${wrongConcepts.slice(0, 2).join(', ')}${wrongConcepts.length > 2 ? ' 등' : ''}입니다.`
+      : '';
+
+  return [missingText, wrongConceptText].filter(Boolean).join(' ');
+}
+
 export function ResultPanel({
   standard,
   userAnswer,
@@ -132,6 +165,7 @@ export function ResultPanel({
   const [reportNotice, setReportNotice] = useState<string | null>(null);
 
   const canManualAdd = result.resultStatus === 'CORRECT' || result.resultStatus === 'EXCELLENT';
+  const detailFeedback = buildDetailFeedback(metadata);
 
   return (
     <Card css={{ display: 'grid', gap: '$6', '&::before': { display: 'none' } }}>
@@ -151,6 +185,7 @@ export function ResultPanel({
           </strong>
         </div>
         <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{result.reason}</span>
+        {detailFeedback ? <span style={{ color: '#b93a3a', lineHeight: 1.7 }}>{detailFeedback}</span> : null}
         {result.shouldRecommendReview ? <Hint>복습 권장</Hint> : null}
         {metadata?.fallbackNotice ? <Hint>{metadata.fallbackNotice}</Hint> : null}
       </div>

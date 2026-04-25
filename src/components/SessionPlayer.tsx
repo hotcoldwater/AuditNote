@@ -111,12 +111,14 @@ export function SessionPlayer({
   partNo,
   chapterNo,
   preferredStandardId,
+  examOnly,
   wrongStatuses,
 }: {
   mode: StudyMode;
   partNo?: number | null;
   chapterNo?: number | null;
   preferredStandardId?: string | null;
+  examOnly?: boolean;
   wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
   const { user, loading: authLoading } = useAuth();
@@ -191,7 +193,10 @@ export function SessionPlayer({
         setAnswer('');
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
-        const nextStandard = pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId);
+        const candidates = examOnly
+          ? standardsPayload.standards.filter((item) => Array.isArray(item.exam_years) && item.exam_years.length > 0)
+          : standardsPayload.standards;
+        const nextStandard = pickWeightedRandomStandard(candidates, statsMap, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
         setAnswer('');
@@ -210,7 +215,7 @@ export function SessionPlayer({
       return;
     }
     void loadQuestion();
-  }, [authLoading, chapterNo, mode, partNo, preferredStandardId, user?.id]);
+  }, [authLoading, chapterNo, examOnly, mode, partNo, preferredStandardId, user?.id]);
 
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;

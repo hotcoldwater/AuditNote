@@ -10,6 +10,7 @@ export function StudyPlayPage() {
   const partNo = Number(searchParams.get('partNo'));
   const chapterNo = Number(searchParams.get('chapterNo'));
   const standardId = searchParams.get('standardId');
+  const examOnly = searchParams.get('examOnly') === '1';
 
   const studyMode = useMemo<StudyMode>(() => {
     if (mode === 'part') {
@@ -28,6 +29,7 @@ export function StudyPlayPage() {
         partNo={Number.isFinite(partNo) ? partNo : undefined}
         chapterNo={Number.isFinite(chapterNo) ? chapterNo : undefined}
         preferredStandardId={standardId}
+        examOnly={examOnly}
       />
     </Layout>
   );

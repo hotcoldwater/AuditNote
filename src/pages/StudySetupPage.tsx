@@ -252,6 +252,10 @@ export function StudySetupPage() {
                 <ButtonLabel>전체</ButtonLabel>
                 <ButtonTitle>전체 범위 랜덤</ButtonTitle>
               </StudyButton>
+              <StudyButton onClick={() => navigate('/study/play?mode=random&examOnly=1')}>
+                <ButtonLabel>기출만</ButtonLabel>
+                <ButtonTitle>기출된 기준서만 랜덤 출제</ButtonTitle>
+              </StudyButton>
             </ChoiceGrid>
           </Stack>
         ) : null}

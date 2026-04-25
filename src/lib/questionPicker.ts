@@ -8,6 +8,8 @@ export const levelWeightMap: LevelWeightMap = {
   5: 2,
 };
 
+const EXAM_STANDARD_WEIGHT_MULTIPLIER = 4;
+
 export function getHistoryFactor(stat?: UserStandardStats) {
   if (!stat) {
     return 1.0;
@@ -38,7 +40,8 @@ export function getHistoryFactor(stat?: UserStandardStats) {
 
 export function computeFinalWeight(standard: Standard, stat?: UserStandardStats) {
   const levelWeight = levelWeightMap[standard.level] ?? 1;
-  return levelWeight * getHistoryFactor(stat);
+  const examWeight = Array.isArray(standard.exam_years) && standard.exam_years.length > 0 ? EXAM_STANDARD_WEIGHT_MULTIPLIER : 1;
+  return levelWeight * getHistoryFactor(stat) * examWeight;
 }
 
 export function pickWeightedRandomStandard(
