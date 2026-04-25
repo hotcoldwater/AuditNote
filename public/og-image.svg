@@ -1,0 +1,51 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="60" x2="1080" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#E7F0FF"/>
+    </linearGradient>
+    <linearGradient id="card" x1="280" y1="110" x2="920" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EFF5FF"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="140" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDFEFF"/>
+      <stop offset="1" stop-color="#DCEAFF"/>
+    </linearGradient>
+    <filter id="shadow" x="230" y="70" width="740" height="490" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0901961 0 0 0 0 0.239216 0 0 0 0 0.478431 0 0 0 0.14 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1030" cy="112" r="172" fill="#D5E5FF" fill-opacity="0.72"/>
+  <circle cx="178" cy="116" r="118" fill="#EDF4FF"/>
+  <circle cx="1090" cy="520" r="170" fill="#F0F6FF"/>
+
+  <g filter="url(#shadow)">
+    <rect x="270" y="92" width="660" height="430" rx="36" fill="url(#card)"/>
+    <rect x="270.75" y="92.75" width="658.5" height="428.5" rx="35.25" stroke="#D5E3FB" stroke-width="1.5"/>
+  </g>
+
+  <rect x="340" y="156" width="140" height="140" rx="36" fill="url(#mark)"/>
+  <rect x="340.75" y="156.75" width="138.5" height="138.5" rx="35.25" stroke="#C7D8F7" stroke-width="1.5"/>
+  <path d="M380 266V186H408.36C434.76 186 449 201.12 449 225.8C449 250.4 434.92 266 409 266H380ZM396.72 252.08H408.08C424.76 252.08 431.8 241.96 431.8 225.8C431.8 209.56 424.6 199.92 408.36 199.92H396.72V252.08Z" fill="#183D7A"/>
+
+  <text x="520" y="218" fill="#173D7A" font-size="62" font-weight="700" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif">AuditNote</text>
+  <text x="522" y="274" fill="#5074A9" font-size="28" font-weight="600" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif" letter-spacing="0.18em">감사 암기 서비스</text>
+  <text x="340" y="380" fill="#3A4A66" font-size="34" font-weight="500" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif">
+    회계감사 기준서를 1문제씩 반복 학습하는
+  </text>
+  <text x="340" y="430" fill="#3A4A66" font-size="34" font-weight="500" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif">
+    구조화된 암기 훈련 앱
+  </text>
+
+  <rect x="340" y="464" width="150" height="46" rx="23" fill="#1A3C74"/>
+  <text x="376" y="494" fill="#FFFFFF" font-size="24" font-weight="700" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif">auditnote.cc</text>
+</svg>
