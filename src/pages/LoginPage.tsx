@@ -206,7 +206,7 @@ export function LoginPage() {
         </Form>
 
         <FooterText>
-          계정이 없으면 <Link to="/signup">회원가입</Link>
+          <Link to="/signup">회원가입</Link>
         </FooterText>
       </AuthCard>
     </Shell>

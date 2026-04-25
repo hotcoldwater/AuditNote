@@ -21,6 +21,9 @@ interface AuthContextValue {
     email: string,
     password: string,
     nickname: string,
+    fullName: string,
+    birthDate: string,
+    gender: string,
   ) => Promise<{ error: string | null; message?: string | null; needsEmailConfirmation?: boolean }>;
   updateNickname: (nickname: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -43,6 +46,9 @@ function fallbackAuthUser(user: User): AuthUser {
     id: user.id,
     email: user.email ?? '',
     nickname: user.user_metadata.nickname ?? user.email?.split('@')[0] ?? '사용자',
+    fullName: user.user_metadata.full_name ?? null,
+    birthDate: user.user_metadata.birth_date ?? null,
+    gender: user.user_metadata.gender ?? null,
   };
 }
 
@@ -52,7 +58,7 @@ async function loadProfile(user: User): Promise<AuthUser> {
   }
 
   const { data } = await withTimeout(
-    supabase.from('profiles').select('nickname, email').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('nickname, email, full_name, birth_date, gender').eq('id', user.id).maybeSingle(),
     AUTH_TIMEOUT_MS,
   );
 
@@ -60,6 +66,9 @@ async function loadProfile(user: User): Promise<AuthUser> {
     id: user.id,
     email: data?.email ?? user.email ?? '',
     nickname: data?.nickname ?? user.user_metadata.nickname ?? user.email?.split('@')[0] ?? '사용자',
+    fullName: data?.full_name ?? user.user_metadata.full_name ?? null,
+    birthDate: data?.birth_date ?? user.user_metadata.birth_date ?? null,
+    gender: data?.gender ?? user.user_metadata.gender ?? null,
   };
 }
 
@@ -183,12 +192,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         return { error: error ? normalizeAuthErrorMessage(error.message) : null };
       },
-      async signUp(email, password, nickname) {
+      async signUp(email, password, nickname, fullName, birthDate, gender) {
+        const trimmedNickname = nickname.trim();
+        const trimmedFullName = fullName.trim();
+        const trimmedBirthDate = birthDate.trim();
+        const trimmedGender = gender.trim();
+
         if (!isSupabaseConfigured || !supabase) {
           const demoUser: AuthUser = {
             id: 'demo-user',
             email: email || 'demo@auditnote.local',
-            nickname: nickname || email.split('@')[0] || '샘플사용자',
+            nickname: trimmedNickname || email.split('@')[0] || '샘플사용자',
+            fullName: trimmedFullName || null,
+            birthDate: trimmedBirthDate || null,
+            gender: trimmedGender || null,
             isDemo: true,
           };
           setDemoUser(demoUser);
@@ -200,7 +217,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
           email,
           password,
           options: {
-            data: { nickname },
+            data: {
+              nickname: trimmedNickname,
+              full_name: trimmedFullName,
+              birth_date: trimmedBirthDate,
+              gender: trimmedGender,
+            },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/confirmed`,
           },
         });
@@ -219,7 +241,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           await supabase.from('profiles').upsert({
             id: authUser.id,
             email,
-            nickname,
+            nickname: trimmedNickname,
+            full_name: trimmedFullName,
+            birth_date: trimmedBirthDate,
+            gender: trimmedGender,
           });
         }
 

@@ -14,8 +14,15 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   nickname text,
+  full_name text,
+  birth_date date,
+  gender text,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists birth_date date;
+alter table public.profiles add column if not exists gender text;
 
 create table if not exists public.standards (
   id text primary key,

@@ -130,6 +130,9 @@ export interface AuthUser {
   id: string;
   email: string;
   nickname: string;
+  fullName?: string | null;
+  birthDate?: string | null;
+  gender?: string | null;
   isDemo?: boolean;
 }
 
