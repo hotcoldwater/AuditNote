@@ -479,7 +479,17 @@ export async function onRequestPost(context) {
   const schema = {
     type: 'object',
     additionalProperties: false,
-    required: ['score', 'resultStatus', 'reason', 'goodPart', 'badPart', 'shouldAddWrongNote'],
+    required: [
+      'score',
+      'resultStatus',
+      'reason',
+      'goodPart',
+      'badPart',
+      'missingPoints',
+      'wrongConcepts',
+      'shouldRecommendReview',
+      'shouldAddWrongNote',
+    ],
     properties: {
       score: { type: 'number' },
       resultStatus: { type: 'string', enum: RESULT_STATUSES },
