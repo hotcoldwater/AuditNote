@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { Layout } from '../components/Layout';
 import { getOrderedStudyParts, getStudyPartTitle } from '../lib/partMeta';
-import { fetchActiveStandards, getAvailableParts } from '../lib/standards';
+import { getStandardLocationLines } from '../lib/standardDisplay';
+import { fetchActiveStandards, getAvailableParts, sortStandardsForStudySequence } from '../lib/standards';
 import { styled } from '../styles/stitches.config';
+import type { Standard } from '../types';
+import { Layout } from '../components/Layout';
 
 const Stack = styled('div', {
   display: 'grid',
@@ -16,7 +19,7 @@ const Notice = styled(Card, {
   lineHeight: 1.7,
 });
 
-const Grid = styled('div', {
+const ChoiceGrid = styled('div', {
   display: 'grid',
   gap: '$3',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -32,7 +35,6 @@ const StudyButton = styled('button', {
   gap: '$2',
   minHeight: '108px',
   padding: '$5',
-  borderRadius: '$lg',
   border: '1px solid $borderSoft',
   backgroundColor: '$panel',
   boxShadow: '$soft',
@@ -66,41 +68,281 @@ const ButtonTitle = styled('div', {
   lineHeight: 1.6,
 });
 
+const HeaderCard = styled(Card, {
+  display: 'grid',
+  gap: '$3',
+});
+
+const HeaderTitle = styled('div', {
+  fontFamily: '$heading',
+  fontSize: '$5',
+  lineHeight: 1.15,
+  color: '$primary',
+});
+
+const HeaderBody = styled('div', {
+  color: '$mutedText',
+  fontSize: '$2',
+  lineHeight: 1.7,
+});
+
+const ActionRow = styled('div', {
+  display: 'flex',
+  gap: '$2',
+  flexWrap: 'wrap',
+});
+
+const ListCard = styled(Card, {
+  display: 'grid',
+  gap: '$4',
+});
+
+const ListGrid = styled('div', {
+  display: 'grid',
+  gap: '$3',
+});
+
+const ListButton = styled('button', {
+  all: 'unset',
+  boxSizing: 'border-box',
+  display: 'grid',
+  gap: '$2',
+  padding: '$4',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
+  cursor: 'pointer',
+  transition: 'transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    borderColor: '$border',
+    backgroundColor: '$panel',
+  },
+  '&:focus-visible': {
+    boxShadow: '$focus',
+  },
+});
+
+const RowTop = styled('div', {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '$3',
+});
+
+const Chip = styled('span', {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '40px',
+  minHeight: '28px',
+  padding: '0 10px',
+  border: '1px solid $border',
+  backgroundColor: '$primarySoft',
+  color: '$primary',
+  fontSize: '$2',
+  fontWeight: 700,
+});
+
+type SetupMode = 'RANDOM' | 'SELECT' | null;
+
+type ChapterGroup = {
+  chapterNo: number;
+  label: string;
+  standards: Standard[];
+};
+
+function getChapterLabel(standard: Standard, chapterNo: number) {
+  const locationLines = getStandardLocationLines(standard);
+  return locationLines[1] ?? `${chapterNo}장`;
+}
+
+function buildChapterGroups(standards: Standard[], partNo: number) {
+  const partStandards = sortStandardsForStudySequence(standards.filter((item) => item.part_no === partNo));
+  const groups = new Map<number, Standard[]>();
+
+  for (const standard of partStandards) {
+    if (!Number.isInteger(standard.chapter_no)) {
+      continue;
+    }
+    const chapterNo = Number(standard.chapter_no);
+    const existing = groups.get(chapterNo) ?? [];
+    existing.push(standard);
+    groups.set(chapterNo, existing);
+  }
+
+  return [...groups.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([chapterNo, items]) => ({
+      chapterNo,
+      label: getChapterLabel(items[0], chapterNo),
+      standards: items,
+    })) satisfies ChapterGroup[];
+}
+
 export function StudySetupPage() {
   const navigate = useNavigate();
+  const [standards, setStandards] = useState<Standard[]>([]);
   const [parts, setParts] = useState<number[]>(getOrderedStudyParts());
   const [notice, setNotice] = useState<string | undefined>();
+  const [setupMode, setSetupMode] = useState<SetupMode>(null);
+  const [selectedPartNo, setSelectedPartNo] = useState<number | null>(null);
+  const [selectedChapterNo, setSelectedChapterNo] = useState<number | null>(null);
 
   useEffect(() => {
     fetchActiveStandards().then((payload) => {
       const availableParts = getAvailableParts(payload.standards);
+      setStandards(payload.standards);
       setParts(availableParts.length > 0 ? availableParts : getOrderedStudyParts());
       setNotice(payload.notice);
     });
   }, []);
+
+  const chapterGroups = useMemo(
+    () => (selectedPartNo ? buildChapterGroups(standards, selectedPartNo) : []),
+    [selectedPartNo, standards],
+  );
+  const currentChapter = useMemo(
+    () => chapterGroups.find((item) => item.chapterNo === selectedChapterNo) ?? null,
+    [chapterGroups, selectedChapterNo],
+  );
 
   return (
     <Layout title="학습 시작">
       <Stack>
         {notice ? <Notice>{notice}</Notice> : null}
 
-        <Grid>
-          {getOrderedStudyParts().map((partNo) => (
-            <StudyButton
-              key={partNo}
-              onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}`)}
-              disabled={!parts.includes(partNo)}
-            >
-              <ButtonLabel>{partNo}편</ButtonLabel>
-              <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
+        {setupMode === null ? (
+          <ChoiceGrid>
+            <StudyButton onClick={() => setSetupMode('RANDOM')}>
+              <ButtonLabel>RANDOM</ButtonLabel>
+              <ButtonTitle>선택한 범위 안에서 랜덤으로 출제합니다.</ButtonTitle>
             </StudyButton>
-          ))}
+            <StudyButton onClick={() => setSetupMode('SELECT')}>
+              <ButtonLabel>SELECT</ButtonLabel>
+              <ButtonTitle>편과 장을 고른 뒤 기준서를 순서대로 직접 선택합니다.</ButtonTitle>
+            </StudyButton>
+          </ChoiceGrid>
+        ) : null}
 
-          <StudyButton onClick={() => navigate('/study/play?mode=random')}>
-            <ButtonLabel>전체</ButtonLabel>
-            <ButtonTitle>전체 범위</ButtonTitle>
-          </StudyButton>
-        </Grid>
+        {setupMode === 'RANDOM' ? (
+          <Stack>
+            <HeaderCard>
+              <HeaderTitle>RANDOM</HeaderTitle>
+              <HeaderBody>범위를 고르면 그 안에서 랜덤으로 출제합니다.</HeaderBody>
+              <ActionRow>
+                <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
+                  방식 다시 선택
+                </Button>
+              </ActionRow>
+            </HeaderCard>
+
+            <ChoiceGrid>
+              {getOrderedStudyParts().map((partNo) => (
+                <StudyButton
+                  key={partNo}
+                  onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}`)}
+                  disabled={!parts.includes(partNo)}
+                >
+                  <ButtonLabel>{partNo}편</ButtonLabel>
+                  <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
+                </StudyButton>
+              ))}
+
+              <StudyButton onClick={() => navigate('/study/play?mode=random')}>
+                <ButtonLabel>전체</ButtonLabel>
+                <ButtonTitle>전체 범위 랜덤</ButtonTitle>
+              </StudyButton>
+            </ChoiceGrid>
+          </Stack>
+        ) : null}
+
+        {setupMode === 'SELECT' ? (
+          <Stack>
+            <HeaderCard>
+              <HeaderTitle>SELECT</HeaderTitle>
+              <HeaderBody>편을 고르고, 장을 고른 뒤, 그 장의 기준서를 순서대로 선택해서 풉니다.</HeaderBody>
+              <ActionRow>
+                {selectedChapterNo !== null ? (
+                  <Button
+                    tone="secondary"
+                    css={{ width: 'auto', minHeight: '44px' }}
+                    onClick={() => setSelectedChapterNo(null)}
+                  >
+                    장 다시 선택
+                  </Button>
+                ) : null}
+                {selectedPartNo !== null ? (
+                  <Button
+                    tone="secondary"
+                    css={{ width: 'auto', minHeight: '44px' }}
+                    onClick={() => {
+                      setSelectedPartNo(null);
+                      setSelectedChapterNo(null);
+                    }}
+                  >
+                    편 다시 선택
+                  </Button>
+                ) : null}
+                <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
+                  방식 다시 선택
+                </Button>
+              </ActionRow>
+            </HeaderCard>
+
+            {selectedPartNo === null ? (
+              <ChoiceGrid>
+                {getOrderedStudyParts().map((partNo) => (
+                  <StudyButton
+                    key={partNo}
+                    onClick={() => setSelectedPartNo(partNo)}
+                    disabled={!parts.includes(partNo)}
+                  >
+                    <ButtonLabel>{partNo}편</ButtonLabel>
+                    <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
+                  </StudyButton>
+                ))}
+              </ChoiceGrid>
+            ) : null}
+
+            {selectedPartNo !== null && selectedChapterNo === null ? (
+              <ChoiceGrid>
+                {chapterGroups.map((chapter) => (
+                  <StudyButton key={chapter.chapterNo} onClick={() => setSelectedChapterNo(chapter.chapterNo)}>
+                    <ButtonLabel>{chapter.label}</ButtonLabel>
+                    <ButtonTitle>{`${chapter.standards.length}개 기준서`}</ButtonTitle>
+                  </StudyButton>
+                ))}
+              </ChoiceGrid>
+            ) : null}
+
+            {selectedPartNo !== null && currentChapter ? (
+              <ListCard>
+                <HeaderBody>{`${selectedPartNo}편 · ${currentChapter.label}`}</HeaderBody>
+                <ListGrid>
+                  {currentChapter.standards.map((standard, index) => {
+                    const locationLines = getStandardLocationLines(standard);
+                    return (
+                      <ListButton
+                        key={standard.id}
+                        onClick={() =>
+                          navigate(
+                            `/study/play?mode=select&partNo=${selectedPartNo}&chapterNo=${currentChapter.chapterNo}&standardId=${standard.id}`,
+                          )
+                        }
+                      >
+                        <RowTop>
+                          <strong style={{ color: '#173d7a', fontSize: 16, lineHeight: 1.5 }}>{`${index + 1}. ${standard.title}`}</strong>
+                          <Chip>{`Lv${standard.level}`}</Chip>
+                        </RowTop>
+                        <ButtonTitle>{locationLines[2] ?? currentChapter.label}</ButtonTitle>
+                      </ListButton>
+                    );
+                  })}
+                </ListGrid>
+              </ListCard>
+            ) : null}
+          </Stack>
+        ) : null}
       </Stack>
     </Layout>
   );

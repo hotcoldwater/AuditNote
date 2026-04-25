@@ -49,8 +49,7 @@ export function deriveResultStatus(score: number): ResultStatus {
 }
 
 export function normalizeScoringResult(
-  result: Pick<ScoringResult, 'score' | 'reason' | 'shouldAddWrongNote'> &
-    Partial<Pick<ScoringResult, 'goodPart' | 'badPart' | 'missingPoints' | 'wrongConcepts'>>,
+  result: Pick<ScoringResult, 'score' | 'reason' | 'shouldAddWrongNote'>,
 ): ScoringResult {
   const score = clampScore(result.score);
   const resultStatus = deriveResultStatus(score);
@@ -60,10 +59,6 @@ export function normalizeScoringResult(
     score,
     resultStatus,
     reason: result.reason.trim() || '채점 사유가 제공되지 않았습니다.',
-    goodPart: result.goodPart?.trim() || '핵심적으로 맞게 쓴 부분은 아직 충분히 확인되지 않습니다.',
-    badPart: result.badPart?.trim() || '보완이 필요한 핵심 문장을 더 구체적으로 적어 주세요.',
-    missingPoints: Array.isArray(result.missingPoints) ? result.missingPoints.filter(Boolean) : [],
-    wrongConcepts: Array.isArray(result.wrongConcepts) ? result.wrongConcepts.filter(Boolean) : [],
     shouldRecommendReview,
     shouldAddWrongNote: resultStatus === 'WRONG' || resultStatus === 'SKIPPED' ? true : result.shouldAddWrongNote,
   };

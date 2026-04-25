@@ -22,6 +22,7 @@ export function WrongNotesPage() {
   const [standards, setStandards] = useState<Standard[]>([]);
   const [notice, setNotice] = useState<string | undefined>();
   const [filter, setFilter] = useState<'ALL' | WrongNoteStatus>('ALL');
+  const [startOpen, setStartOpen] = useState(false);
 
   async function load() {
     if (!user) {
@@ -45,6 +46,7 @@ export function WrongNotesPage() {
   );
   const wrongCount = notes.filter((item) => (item.note_status ?? 'WRONG') === 'WRONG').length;
   const reviewCount = notes.filter((item) => (item.note_status ?? 'WRONG') === 'REVIEW').length;
+  const allCount = notes.length;
 
   return (
     <Layout title="오답노트" description="WRONG과 REVIEW를 나눠서 보고, 필요한 분류만 다시 풀 수 있습니다.">
@@ -52,32 +54,38 @@ export function WrongNotesPage() {
 
       <Card css={{ display: 'grid', gap: '$4' }}>
         <strong>오답 시작</strong>
-        <div style={{ display: 'grid', gap: 12 }}>
-          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=all')}>
-            전체 오답 시작
-          </Button>
-          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=wrong')}>
-            WRONG만 다시 풀기
-          </Button>
-          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=review')}>
-            REVIEW만 다시 풀기
-          </Button>
-        </div>
+        <Button tone="secondary" onClick={() => setStartOpen((prev) => !prev)}>
+          오답 시작
+        </Button>
+        {startOpen ? (
+          <div style={{ display: 'grid', gap: 12 }}>
+            <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=wrong')}>
+              {`WRONG ${wrongCount}`}
+            </Button>
+            <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=review')}>
+              {`REVIEW ${reviewCount}`}
+            </Button>
+            <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=all')}>
+              {`ALL ${allCount}`}
+            </Button>
+          </div>
+        ) : null}
       </Card>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {FILTERS.map((item) => (
-          <Button
-            key={item.key}
-            tone={filter === item.key ? 'primary' : 'secondary'}
-            css={{ width: 'auto', minHeight: '44px', padding: '0 18px' }}
-            onClick={() => setFilter(item.key)}
-          >
-            {item.label}
-          </Button>
-        ))}
-        <Badge tone="danger">{`WRONG ${wrongCount}`}</Badge>
-        <Badge tone="warning">{`REVIEW ${reviewCount}`}</Badge>
+        {FILTERS.map((item) => {
+          const count = item.key === 'ALL' ? allCount : item.key === 'WRONG' ? wrongCount : reviewCount;
+          return (
+            <Button
+              key={item.key}
+              tone={filter === item.key ? 'primary' : 'secondary'}
+              css={{ width: 'auto', minHeight: '44px', padding: '0 18px' }}
+              onClick={() => setFilter(item.key)}
+            >
+              {`${item.label} ${count}`}
+            </Button>
+          );
+        })}
       </div>
 
       <div style={{ display: 'grid', gap: 16 }}>

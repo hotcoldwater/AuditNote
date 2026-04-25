@@ -246,6 +246,9 @@ function modeLabel(mode: string) {
   if (mode === 'PART') {
     return '편별';
   }
+  if (mode === 'SELECT') {
+    return '선택';
+  }
   return '랜덤';
 }
 
@@ -328,22 +331,18 @@ export function RecordsPage() {
   }
 
   return (
-    <Layout title="기록노트" description="학습 흐름과 약점 분포를 한 화면에서 확인할 수 있도록 정리했습니다.">
+    <Layout title="기록노트" description="최근 흐름과 약점을 간결하게 확인합니다.">
       <Hero>
         <HeroTop>
           <HeroCopy>
-            <Eyebrow>Study Ledger</Eyebrow>
-            <HeroTitle>풀이 기록을 지표와 흐름으로 다시 읽습니다.</HeroTitle>
-            <HeroDescription>
-              최근 학습량, 점수 분포, 자주 틀리는 기준서, 편별 진도를 한 번에 보면서 다음 학습 우선순위를 정리할 수 있습니다.
-            </HeroDescription>
+            <Eyebrow>Records</Eyebrow>
+            <HeroTitle>기록을 빠르게 읽는 화면으로 정리했습니다.</HeroTitle>
+            <HeroDescription>점수, 진도, 자주 막히는 기준서를 한 화면에서 확인합니다.</HeroDescription>
           </HeroCopy>
           <HeroAside>
-            <MetricLabel>이번 흐름</MetricLabel>
+            <MetricLabel>오늘 기록</MetricLabel>
             <AsideValue>{stats.todayAttemptCount}문제</AsideValue>
-            <SectionDescription>
-              오늘 누적 평균은 {stats.averageScore}점이고, 전체 오답률은 {stats.overallWrongRate}%입니다.
-            </SectionDescription>
+            <SectionDescription>{`평균 ${stats.averageScore}점 · 오답률 ${stats.overallWrongRate}%`}</SectionDescription>
             <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => void loadDashboard()}>
               새로고침
             </Button>
@@ -377,10 +376,10 @@ export function RecordsPage() {
       ) : null}
 
       <StatsGrid>
-        <StatCard title="오늘 푼 문제 수" value={`${stats.todayAttemptCount}개`} description="오늘 학습량 기준" />
-        <StatCard title="누적 풀이 수" value={`${stats.totalAttempts}회`} description="삭제 전까지의 총 기록" />
-        <StatCard title="평균 점수" value={`${stats.averageScore}점`} description="전체 풀이 평균" />
-        <StatCard title="전체 진행률" value={`${stats.overallProgress}%`} description="활성 기준서 대비" />
+        <StatCard title="오늘" value={`${stats.todayAttemptCount}개`} description="오늘 풀이" />
+        <StatCard title="누적" value={`${stats.totalAttempts}회`} description="전체 기록" />
+        <StatCard title="평균" value={`${stats.averageScore}점`} description="평균 점수" />
+        <StatCard title="진도" value={`${stats.overallProgress}%`} description="전체 진행률" />
       </StatsGrid>
 
       <AnalyticsGrid>
@@ -388,7 +387,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>최근 7일 학습 흐름</SectionTitle>
-              <SectionDescription>날짜별 풀이 수와 평균 점수를 함께 봅니다.</SectionDescription>
+              <SectionDescription>최근 일주일 흐름입니다.</SectionDescription>
             </div>
             <Badge tone="primary">{stats.totalAttempts}회 누적</Badge>
           </SectionHeader>
@@ -412,7 +411,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>점수 분포</SectionTitle>
-              <SectionDescription>현재 기록이 어느 점수대에 몰려 있는지 빠르게 확인합니다.</SectionDescription>
+              <SectionDescription>점수대 분포를 확인합니다.</SectionDescription>
             </div>
           </SectionHeader>
           <BarChart
@@ -437,7 +436,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>편별 진행률 / 오답률</SectionTitle>
-              <SectionDescription>어느 편에서 막히는지 비율로 확인합니다.</SectionDescription>
+              <SectionDescription>편별 진도와 오답률입니다.</SectionDescription>
             </div>
           </SectionHeader>
           <div style={{ display: 'grid', gap: 16 }}>
@@ -468,7 +467,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>LV별 정답률</SectionTitle>
-              <SectionDescription>난이도 그룹별 정답률 흐름입니다.</SectionDescription>
+              <SectionDescription>난이도별 정답률입니다.</SectionDescription>
             </div>
           </SectionHeader>
           <BarChart
@@ -486,7 +485,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>자주 틀린 기준서</SectionTitle>
-              <SectionDescription>오답노트 unresolved 기준 상위 항목입니다.</SectionDescription>
+              <SectionDescription>자주 틀린 기준서입니다.</SectionDescription>
             </div>
           </SectionHeader>
           <AttemptList>
@@ -514,7 +513,7 @@ export function RecordsPage() {
           <SectionHeader>
             <div style={{ display: 'grid', gap: 6 }}>
               <SectionTitle>기록 관리</SectionTitle>
-              <SectionDescription>최근 기록을 개별 삭제하거나 전체 학습기록을 초기화할 수 있습니다.</SectionDescription>
+              <SectionDescription>기록을 개별 삭제하거나 전체 초기화할 수 있습니다.</SectionDescription>
             </div>
             <Button
               tone="danger"

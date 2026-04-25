@@ -270,19 +270,17 @@ function blendScore(aiScore: number, ruleScore: number) {
 }
 
 function buildFeedbackFromRule(ruleScore: RuleScoringResult) {
+  const goodSegment =
+    ruleScore.includedRequiredKeywords.length > 0
+      ? `잘한 부분은 ${ruleScore.includedRequiredKeywords.slice(0, 2).join(', ')}를 반영한 점입니다`
+      : '잘한 부분은 정답 취지와 맞는 표현을 일부 반영한 점입니다';
+  const badSegment =
+    ruleScore.missingPoints.length > 0
+      ? `보완할 부분은 ${ruleScore.missingPoints.slice(0, 2).join(', ')} 보완이 필요한 점입니다`
+      : '보완할 부분은 세부 요건과 문장 연결을 더 분명히 적는 점입니다';
+
   return {
-    reason:
-      ruleScore.score >= 75
-        ? '규칙 기반 비교에서 핵심 문장의 상당 부분이 충족되었습니다.'
-        : '규칙 기반 비교에서 핵심 문장 충족도가 아직 충분하지 않습니다.',
-    goodPart:
-      ruleScore.includedRequiredKeywords.length > 0
-        ? `핵심 요소 ${ruleScore.includedRequiredKeywords.slice(0, 2).join(', ')}를 반영했습니다.`
-        : '일부 핵심 표현은 정답 취지와 맞게 작성했습니다.',
-    badPart:
-      ruleScore.missingPoints.length > 0
-        ? `핵심 요소 ${ruleScore.missingPoints.slice(0, 2).join(', ')} 보완이 필요합니다.`
-        : '세부 요건과 문장 연결을 조금 더 명확히 쓰면 좋습니다.',
+    reason: `${goodSegment}. ${badSegment}.`,
   };
 }
 
@@ -300,10 +298,6 @@ function finalizeResult(base: Partial<ScoringResult>, ruleScore: RuleScoringResu
   const normalized = normalizeScoringResult({
     score: finalScore,
     reason: base.reason ?? '채점 사유가 제공되지 않았습니다.',
-    goodPart: base.goodPart,
-    badPart: base.badPart,
-    missingPoints: base.missingPoints ?? ruleScore.missingPoints,
-    wrongConcepts: base.wrongConcepts ?? ruleScore.detectedWrongConcepts,
     shouldAddWrongNote: base.shouldAddWrongNote ?? finalScore < 60,
   });
 
@@ -318,8 +312,6 @@ function finalizeResult(base: Partial<ScoringResult>, ruleScore: RuleScoringResu
   }
 
   normalized.shouldRecommendReview = normalized.resultStatus === 'REVIEW';
-  normalized.missingPoints = normalized.missingPoints ?? [];
-  normalized.wrongConcepts = normalized.wrongConcepts ?? [];
   normalized.shouldAddWrongNote = normalized.resultStatus === 'WRONG' || normalized.resultStatus === 'SKIPPED';
 
   return normalized;
@@ -415,10 +407,6 @@ function buildSkippedResult() {
   const result = normalizeScoringResult({
     score: 0,
     reason: '답안이 작성되지 않았습니다.',
-    goodPart: '제출된 답안이 없어 잘 쓴 부분을 확인할 수 없습니다.',
-    badPart: '핵심 문장을 직접 작성해 봐야 채점과 피드백이 가능합니다.',
-    missingPoints: [],
-    wrongConcepts: [],
     shouldAddWrongNote: true,
   });
 

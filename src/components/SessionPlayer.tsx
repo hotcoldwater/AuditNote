@@ -6,7 +6,7 @@ import { useAuth } from '../lib/auth';
 import { submitIssueReport } from '../lib/issueReports';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
 import { getStandardLocationLines } from '../lib/standardDisplay';
-import { fetchActiveStandards } from '../lib/standards';
+import { fetchActiveStandards, sortStandardsForStudySequence } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
 import type { GradingMetadata, ScoringResult, Standard, StudyMode } from '../types';
 import { Button } from './Button';
@@ -109,11 +109,13 @@ const MetaSection = styled('section', {
 export function SessionPlayer({
   mode,
   partNo,
+  chapterNo,
   preferredStandardId,
   wrongStatuses,
 }: {
   mode: StudyMode;
   partNo?: number | null;
+  chapterNo?: number | null;
   preferredStandardId?: string | null;
   wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
@@ -127,6 +129,32 @@ export function SessionPlayer({
   const [result, setResult] = useState<ScoringResult | null>(null);
   const [gradingMetadata, setGradingMetadata] = useState<GradingMetadata | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function pickSequentialStandard(
+    standards: Standard[],
+    nextPreferredStandardId?: string | null,
+    excludeStandardId?: string | null,
+  ) {
+    if (standards.length === 0) {
+      return null;
+    }
+
+    if (excludeStandardId) {
+      const currentIndex = standards.findIndex((item) => item.id === excludeStandardId);
+      if (currentIndex >= 0) {
+        return standards[currentIndex + 1] ?? null;
+      }
+    }
+
+    if (nextPreferredStandardId) {
+      const preferred = standards.find((item) => item.id === nextPreferredStandardId);
+      if (preferred) {
+        return preferred;
+      }
+    }
+
+    return standards[0] ?? null;
+  }
 
   async function loadQuestion(excludeStandardId?: string | null) {
     if (!user) {
@@ -152,6 +180,15 @@ export function SessionPlayer({
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
         setAnswer('');
+      } else if (mode === 'SELECT') {
+        const standardsPayload = await fetchActiveStandards(partNo);
+        const chapterStandards = sortStandardsForStudySequence(
+          standardsPayload.standards.filter((item) => item.chapter_no === chapterNo),
+        );
+        const nextStandard = pickSequentialStandard(chapterStandards, preferredStandardId, excludeStandardId);
+        setNotice(standardsPayload.notice);
+        setCurrent(nextStandard);
+        setAnswer('');
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
         const nextStandard = pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId);
@@ -173,7 +210,7 @@ export function SessionPlayer({
       return;
     }
     void loadQuestion();
-  }, [authLoading, mode, partNo, preferredStandardId, user?.id]);
+  }, [authLoading, chapterNo, mode, partNo, preferredStandardId, user?.id]);
 
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;
@@ -242,6 +279,7 @@ export function SessionPlayer({
     return (
       <Card css={{ display: 'grid', gap: '$4' }}>
         <strong>{mode === 'WRONG_NOTE' ? '현재 오답노트에 풀 문제가 없습니다.' : '출제 가능한 문제가 없습니다.'}</strong>
+        {mode === 'SELECT' ? <Notice>선택한 장의 기준서를 모두 확인했습니다.</Notice> : null}
         <Button onClick={() => navigate('/')} tone="secondary">
           홈으로 돌아가기
         </Button>

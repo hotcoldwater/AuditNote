@@ -4,7 +4,6 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../lib/auth';
-import { supabaseDisabledMessage } from '../lib/supabase';
 import { styled } from '../styles/stitches.config';
 
 const Stack = styled('div', {
@@ -45,7 +44,7 @@ const Notice = styled('div', {
 });
 
 export function SettingsPage() {
-  const { user, usingDemo, supabaseEnabled, signOut, updateNickname } = useAuth();
+  const { user, signOut, updateNickname } = useAuth();
   const navigate = useNavigate();
   const [nickname, setNickname] = useState(user?.nickname ?? '');
   const [submitting, setSubmitting] = useState(false);
@@ -92,7 +91,6 @@ export function SettingsPage() {
             </div>
             {notice ? <Notice style={{ color: '#2f5d50' }}>{notice}</Notice> : null}
             {error ? <Notice style={{ color: '#b93a3a' }}>{error}</Notice> : null}
-            {!supabaseEnabled ? <Notice style={{ color: '#B7791F' }}>{supabaseDisabledMessage}</Notice> : null}
             <Button type="submit" disabled={submitting}>
               {submitting ? '저장 중...' : '닉네임 저장'}
             </Button>
@@ -100,9 +98,6 @@ export function SettingsPage() {
         </Card>
 
         <Card css={{ display: 'grid', gap: '$4' }}>
-          <div style={{ color: usingDemo ? '#B7791F' : '#2F5D50' }}>
-            {usingDemo ? '샘플/로컬 모드' : 'Supabase 실사용 모드'}
-          </div>
           <Button
             tone="secondary"
             onClick={async () => {

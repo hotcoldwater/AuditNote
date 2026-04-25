@@ -80,15 +80,6 @@ const Hint = styled('div', {
   lineHeight: 1.7,
 });
 
-const List = styled('ul', {
-  margin: 0,
-  paddingLeft: '18px',
-  display: 'grid',
-  gap: '$1',
-  color: '$mutedText',
-  lineHeight: 1.7,
-});
-
 const TextInput = styled('textarea', {
   width: '100%',
   minHeight: '96px',
@@ -136,6 +127,7 @@ export function ResultPanel({
 }) {
   const examYears = formatExamYears(standard.exam_years);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportType, setReportType] = useState<IssueReportType | null>(null);
   const [reportDetail, setReportDetail] = useState('');
   const [reportNotice, setReportNotice] = useState<string | null>(null);
 
@@ -159,30 +151,8 @@ export function ResultPanel({
           </strong>
         </div>
         <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{result.reason}</span>
-        <span style={{ color: '#2457a6', lineHeight: 1.7 }}>잘 쓴 부분: {result.goodPart}</span>
-        <span style={{ color: '#b93a3a', lineHeight: 1.7 }}>잘못 쓴 부분: {result.badPart}</span>
         {result.shouldRecommendReview ? <Hint>복습 권장</Hint> : null}
         {metadata?.fallbackNotice ? <Hint>{metadata.fallbackNotice}</Hint> : null}
-        {result.missingPoints?.length ? (
-          <Section>
-            <Reference>빠뜨린 핵심 요소</Reference>
-            <List>
-              {result.missingPoints.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </List>
-          </Section>
-        ) : null}
-        {result.wrongConcepts?.length ? (
-          <Section>
-            <Reference>오개념</Reference>
-            <List>
-              {result.wrongConcepts.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </List>
-          </Section>
-        ) : null}
       </div>
 
       <Stack>
@@ -218,29 +188,20 @@ export function ResultPanel({
             <Reference>신고 사유</Reference>
             <div style={{ display: 'grid', gap: 8 }}>
               <Button
-                tone="secondary"
-                onClick={async () => {
-                  const notice = await onReportIssue('QUESTION_AMBIGUOUS', reportDetail);
-                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
-                }}
+                tone={reportType === 'QUESTION_AMBIGUOUS' ? 'primary' : 'secondary'}
+                onClick={() => setReportType('QUESTION_AMBIGUOUS')}
               >
                 1. 문제가 애매함
               </Button>
               <Button
-                tone="secondary"
-                onClick={async () => {
-                  const notice = await onReportIssue('ANSWER_INCORRECT', reportDetail);
-                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
-                }}
+                tone={reportType === 'ANSWER_INCORRECT' ? 'primary' : 'secondary'}
+                onClick={() => setReportType('ANSWER_INCORRECT')}
               >
                 2. 답안이 이상함
               </Button>
               <Button
-                tone="secondary"
-                onClick={async () => {
-                  const notice = await onReportIssue('GRADING_INCORRECT', reportDetail);
-                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
-                }}
+                tone={reportType === 'GRADING_INCORRECT' ? 'primary' : 'secondary'}
+                onClick={() => setReportType('GRADING_INCORRECT')}
               >
                 3. 채점이 이상함
               </Button>
@@ -250,6 +211,20 @@ export function ResultPanel({
               value={reportDetail}
               onChange={(event) => setReportDetail(event.target.value)}
             />
+            <Button
+              onClick={async () => {
+                if (!reportType) {
+                  setReportNotice('이의제기 종류를 먼저 선택해 주세요.');
+                  return;
+                }
+                const notice = await onReportIssue(reportType, reportDetail);
+                setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
+                setReportType(null);
+                setReportDetail('');
+              }}
+            >
+              이의제기 제출
+            </Button>
             {reportNotice ? <Hint>{reportNotice}</Hint> : null}
           </Section>
         ) : null}

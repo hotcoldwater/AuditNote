@@ -101,25 +101,11 @@ function normalizeResult(result) {
     typeof result?.reason === 'string' && result.reason.trim()
       ? result.reason.trim().split(/\r?\n/)[0]
       : '채점 사유가 제공되지 않았습니다.';
-  const goodPart =
-    typeof result?.goodPart === 'string' && result.goodPart.trim()
-      ? result.goodPart.trim().split(/\r?\n/)[0]
-      : '핵심적으로 맞게 쓴 부분은 아직 충분히 확인되지 않습니다.';
-  const badPart =
-    typeof result?.badPart === 'string' && result.badPart.trim()
-      ? result.badPart.trim().split(/\r?\n/)[0]
-      : '보완이 필요한 핵심 문장을 더 구체적으로 적어 주세요.';
-  const missingPoints = Array.isArray(result?.missingPoints) ? result.missingPoints.map((item) => String(item).trim()).filter(Boolean) : [];
-  const wrongConcepts = Array.isArray(result?.wrongConcepts) ? result.wrongConcepts.map((item) => String(item).trim()).filter(Boolean) : [];
 
   return {
     score,
     resultStatus,
     reason,
-    goodPart,
-    badPart,
-    missingPoints,
-    wrongConcepts,
     shouldRecommendReview: resultStatus === 'REVIEW',
     shouldAddWrongNote: resultStatus === 'WRONG' || resultStatus === 'SKIPPED' ? true : Boolean(result?.shouldAddWrongNote),
   };
@@ -369,10 +355,6 @@ function finalizeResult(base, ruleScore, score) {
   const normalized = normalizeResult({
     score: finalScore,
     reason: base.reason,
-    goodPart: base.goodPart,
-    badPart: base.badPart,
-    missingPoints: base.missingPoints ?? ruleScore.missingPoints,
-    wrongConcepts: base.wrongConcepts ?? ruleScore.detectedWrongConcepts,
     shouldAddWrongNote: base.shouldAddWrongNote,
   });
 
@@ -394,17 +376,17 @@ function finalizeResult(base, ruleScore, score) {
 
 function buildFallbackResponse(correctAnswer, userAnswer, requiredKeywords, optionalKeywords, wrongConcepts, reason = '현재 AI 채점이 불안정하여 규칙 기반 채점으로 대체되었습니다.') {
   const ruleScore = computeRuleScore(correctAnswer, userAnswer, requiredKeywords, optionalKeywords, wrongConcepts);
+  const summary =
+    ruleScore.includedRequiredKeywords.length > 0
+      ? `잘한 부분은 ${ruleScore.includedRequiredKeywords.slice(0, 2).join(', ')}를 반영한 점이고, `
+      : '잘한 부분은 정답 취지와 맞는 표현을 일부 반영한 점이고, ';
+  const weakness =
+    ruleScore.missingPoints.length > 0
+      ? `보완할 부분은 ${ruleScore.missingPoints.slice(0, 2).join(', ')} 보완이 필요한 점입니다.`
+      : '보완할 부분은 세부 요건과 문장 연결을 더 분명히 적는 점입니다.';
   const result = finalizeResult(
     {
-      reason: ruleScore.score >= 75 ? '규칙 기반 비교에서 핵심 문장의 상당 부분이 충족되었습니다.' : '규칙 기반 비교에서 핵심 문장 충족도가 아직 충분하지 않습니다.',
-      goodPart:
-        ruleScore.includedRequiredKeywords.length > 0
-          ? `핵심 요소 ${ruleScore.includedRequiredKeywords.slice(0, 2).join(', ')}를 반영했습니다.`
-          : '일부 핵심 표현은 정답 취지와 맞게 작성했습니다.',
-      badPart:
-        ruleScore.missingPoints.length > 0
-          ? `핵심 요소 ${ruleScore.missingPoints.slice(0, 2).join(', ')} 보완이 필요합니다.`
-          : '세부 요건과 문장 연결을 조금 더 명확히 쓰면 좋습니다.',
+      reason: `${summary}${weakness}`,
       shouldAddWrongNote: ruleScore.score < 60,
     },
     ruleScore,
@@ -450,11 +432,7 @@ export async function onRequestPost(context) {
   if (isSkippedAnswer(userAnswer)) {
     const result = normalizeResult({
       score: 0,
-      reason: '답안이 작성되지 않았습니다.',
-      goodPart: '제출된 답안이 없어 잘 쓴 부분을 확인할 수 없습니다.',
-      badPart: '핵심 문장을 직접 작성해 봐야 채점과 피드백이 가능합니다.',
-      missingPoints: [],
-      wrongConcepts: [],
+      reason: '잘한 부분은 제출된 답안이 없어 확인할 수 없고, 보완할 부분은 핵심 문장을 직접 작성해 봐야 한다는 점입니다.',
       shouldAddWrongNote: true,
     });
 
@@ -479,25 +457,11 @@ export async function onRequestPost(context) {
   const schema = {
     type: 'object',
     additionalProperties: false,
-    required: [
-      'score',
-      'resultStatus',
-      'reason',
-      'goodPart',
-      'badPart',
-      'missingPoints',
-      'wrongConcepts',
-      'shouldRecommendReview',
-      'shouldAddWrongNote',
-    ],
+    required: ['score', 'resultStatus', 'reason', 'shouldRecommendReview', 'shouldAddWrongNote'],
     properties: {
       score: { type: 'number' },
       resultStatus: { type: 'string', enum: RESULT_STATUSES },
       reason: { type: 'string' },
-      goodPart: { type: 'string' },
-      badPart: { type: 'string' },
-      missingPoints: { type: 'array', items: { type: 'string' } },
-      wrongConcepts: { type: 'array', items: { type: 'string' } },
       shouldRecommendReview: { type: 'boolean' },
       shouldAddWrongNote: { type: 'boolean' },
     },
@@ -535,14 +499,10 @@ export async function onRequestPost(context) {
           '핵심 요소가 빠지면 감점한다.',
           '정답과 반대되는 오개념이 있으면 크게 감점한다.',
           '단순 키워드 나열만으로 높은 점수를 주지 않는다.',
-          'reason은 전체 평가 요약 한 줄이다.',
-          'goodPart는 잘 쓴 부분 한 줄이다.',
-          'badPart는 보완할 부분 한 줄이다.',
-          'missingPoints는 빠뜨린 핵심 요소 배열이다.',
-          'wrongConcepts는 반대 의미 또는 오개념 배열이다.',
+          'reason은 잘한 부분과 보완할 부분을 한 문장에 함께 담은 총평 한 줄이다.',
           'shouldRecommendReview는 REVIEW 수준이면 true로 둔다.',
           '점수 기준은 90~100 EXCELLENT, 75~89 CORRECT, 60~74 REVIEW, 1~59 WRONG, 0 SKIPPED 이다.',
-          '반환 JSON은 score, resultStatus, reason, goodPart, badPart, missingPoints, wrongConcepts, shouldRecommendReview, shouldAddWrongNote 만 포함한다.',
+          '반환 JSON은 score, resultStatus, reason, shouldRecommendReview, shouldAddWrongNote 만 포함한다.',
         ].join(' '),
         input: prompt,
         text: {
@@ -606,10 +566,6 @@ export async function onRequestPost(context) {
           score: parsedResult?.score,
           resultStatus: parsedResult?.resultStatus,
           reason: parsedResult?.reason,
-          goodPart: parsedResult?.goodPart,
-          badPart: parsedResult?.badPart,
-          missingPoints: parsedResult?.missingPoints,
-          wrongConcepts: parsedResult?.wrongConcepts,
           shouldRecommendReview: parsedResult?.shouldRecommendReview,
           shouldAddWrongNote: parsedResult?.shouldAddWrongNote,
         },

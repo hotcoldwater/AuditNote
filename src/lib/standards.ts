@@ -107,3 +107,29 @@ export function getAvailableParts(standards: Standard[]) {
   return [...new Set(standards.map((item) => item.part_no).filter((item): item is number => Number.isInteger(item)))]
     .sort((a, b) => a - b);
 }
+
+function numberOrMax(value: number | null | undefined) {
+  return Number.isInteger(value) ? Number(value) : Number.MAX_SAFE_INTEGER;
+}
+
+export function sortStandardsForStudySequence(standards: Standard[]) {
+  return [...standards].sort((a, b) => {
+    const numberDiffs = [
+      numberOrMax(a.part_no) - numberOrMax(b.part_no),
+      numberOrMax(a.chapter_no) - numberOrMax(b.chapter_no),
+      numberOrMax(a.section_no) - numberOrMax(b.section_no),
+      numberOrMax(a.topic_no) - numberOrMax(b.topic_no),
+      numberOrMax(a.paren_no) - numberOrMax(b.paren_no),
+      numberOrMax(a.bracket_no) - numberOrMax(b.bracket_no),
+      numberOrMax(a.item_no) - numberOrMax(b.item_no),
+      numberOrMax(a.level) - numberOrMax(b.level),
+    ];
+
+    const numberDiff = numberDiffs.find((value) => value !== 0);
+    if (typeof numberDiff === 'number' && numberDiff !== 0) {
+      return numberDiff;
+    }
+
+    return a.title.localeCompare(b.title, 'ko');
+  });
+}

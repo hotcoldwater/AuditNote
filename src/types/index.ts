@@ -3,7 +3,7 @@ export type GradingMethod = 'ai' | 'rule' | 'rule-fallback';
 export type WrongNoteStatus = 'WRONG' | 'REVIEW';
 export type IssueReportType = 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT';
 
-export type StudyMode = 'RANDOM' | 'PART' | 'WRONG_NOTE';
+export type StudyMode = 'RANDOM' | 'PART' | 'SELECT' | 'WRONG_NOTE';
 
 export type LevelWeightMap = Record<number, number>;
 
@@ -88,10 +88,6 @@ export interface ScoringResult {
   score: number;
   resultStatus: ResultStatus;
   reason: string;
-  goodPart: string;
-  badPart: string;
-  missingPoints?: string[];
-  wrongConcepts?: string[];
   shouldRecommendReview?: boolean;
   shouldAddWrongNote: boolean;
 }
