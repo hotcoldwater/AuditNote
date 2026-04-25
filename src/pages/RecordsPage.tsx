@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart } from '../components/BarChart';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -12,97 +13,52 @@ import { useAuth } from '../lib/auth';
 import { buildDashboardStats } from '../lib/stats';
 import { fetchActiveStandards } from '../lib/standards';
 import { listWrongNotes } from '../lib/wrongNotes';
-import type { DashboardStats } from '../types';
+import type { DashboardStats, RecentStudyItem, Standard } from '../types';
 import { styled } from '../styles/stitches.config';
+
+const ControlsCard = styled(Card, {
+  display: 'grid',
+  gap: '$4',
+});
+
+const SearchInput = styled('input', {
+  width: '100%',
+  minHeight: '52px',
+  padding: '0 $5',
+  border: '1px solid $border',
+  backgroundColor: '$panel',
+  color: '$text',
+  fontSize: '$3',
+  outline: 'none',
+  '&:focus': {
+    borderColor: '$secondary',
+    boxShadow: '$focus',
+  },
+});
+
+const FilterRow = styled('div', {
+  display: 'flex',
+  gap: '$2',
+  flexWrap: 'wrap',
+});
 
 const StatsGrid = styled('div', {
   display: 'grid',
   gap: '$4',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
   '@sm': {
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-  },
-});
-
-const Hero = styled(Card, {
-  display: 'grid',
-  gap: '$6',
-  background:
-    'radial-gradient(circle at top right, rgba(200, 220, 255, 0.72), rgba(200, 220, 255, 0) 28%), $panel',
-});
-
-const HeroTop = styled('div', {
-  display: 'grid',
-  gap: '$3',
-  '@sm': {
-    gridTemplateColumns: 'minmax(0, 1.5fr) minmax(280px, 0.9fr)',
-    alignItems: 'start',
-  },
-});
-
-const HeroCopy = styled('div', {
-  display: 'grid',
-  gap: '$3',
-});
-
-const Eyebrow = styled('div', {
-  fontSize: '$2',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-  fontWeight: 700,
-  color: '$subtleText',
-});
-
-const HeroTitle = styled('h2', {
-  margin: 0,
-  fontFamily: '$heading',
-  fontSize: '$6',
-  lineHeight: 1.08,
-  color: '$primary',
-});
-
-const HeroDescription = styled('p', {
-  margin: 0,
-  color: '$mutedText',
-  lineHeight: 1.8,
-  maxWidth: '46rem',
-});
-
-const HeroAside = styled('div', {
-  display: 'grid',
-  gap: '$3',
-  padding: '$5',
-  borderRadius: '$lg',
-  border: '1px solid $borderSoft',
-  backgroundColor: 'rgba(255,255,255,0.72)',
-});
-
-const AsideValue = styled('div', {
-  fontFamily: '$heading',
-  fontSize: '$5',
-  lineHeight: 1,
-  color: '$primaryPanel',
-});
-
-const SplitGrid = styled('div', {
-  display: 'grid',
-  gap: '$4',
-  '@sm': {
-    gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 0.9fr)',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   },
 });
 
 const SectionCard = styled(Card, {
   display: 'grid',
-  gap: '$5',
+  gap: '$4',
 });
 
 const SectionHeader = styled('div', {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '$3',
-  flexWrap: 'wrap',
+  display: 'grid',
+  gap: '$1',
 });
 
 const SectionTitle = styled('h3', {
@@ -113,107 +69,51 @@ const SectionTitle = styled('h3', {
   lineHeight: 1.15,
 });
 
-const SectionDescription = styled('p', {
-  margin: 0,
+const SectionDescription = styled('div', {
   color: '$mutedText',
+  fontSize: '$2',
   lineHeight: 1.7,
 });
 
-const MetricStrip = styled('div', {
-  display: 'grid',
-  gap: '$3',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-});
-
-const MetricTile = styled('div', {
-  display: 'grid',
-  gap: '$2',
-  padding: '$4',
-  borderRadius: '$lg',
-  backgroundColor: '$surface',
-  border: '1px solid $borderSoft',
-});
-
-const MetricLabel = styled('div', {
-  fontSize: '$2',
-  color: '$subtleText',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  fontWeight: 700,
-});
-
-const MetricValue = styled('div', {
-  fontSize: '$5',
-  lineHeight: 1.1,
-  fontFamily: '$heading',
-  color: '$primary',
-});
-
-const AnalyticsGrid = styled('div', {
-  display: 'grid',
-  gap: '$4',
-  '@sm': {
-    gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 0.9fr)',
-  },
-});
-
-const CompactGrid = styled('div', {
-  display: 'grid',
-  gap: '$4',
-  '@sm': {
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  },
-});
-
-const Panel = styled('div', {
-  display: 'grid',
-  gap: '$4',
-  padding: '$5',
-  borderRadius: '$lg',
-  backgroundColor: '$surface',
-  border: '1px solid $borderSoft',
-});
-
-const StatusRow = styled('div', {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '$2',
-});
-
-const AttemptList = styled('div', {
+const RecordList = styled('div', {
   display: 'grid',
   gap: '$3',
 });
 
-const AttemptRow = styled('div', {
+const RecordRow = styled('div', {
   display: 'grid',
   gap: '$3',
   padding: '$4',
-  borderRadius: '$lg',
-  backgroundColor: '$surface',
   border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
   '@sm': {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
   },
 });
 
-const AttemptMeta = styled('div', {
+const RecordMeta = styled('div', {
   display: 'grid',
   gap: '$2',
 });
 
-const AttemptTitle = styled('strong', {
+const RecordTitle = styled('strong', {
   color: '$primary',
   fontSize: '$3',
+  lineHeight: 1.5,
 });
 
-const AttemptSub = styled('div', {
+const RecordSub = styled('div', {
   display: 'flex',
   flexWrap: 'wrap',
   gap: '$2',
   alignItems: 'center',
   color: '$mutedText',
+  fontSize: '$2',
+});
+
+const RecordDate = styled('div', {
+  color: '$subtleText',
   fontSize: '$2',
 });
 
@@ -224,10 +124,33 @@ const Actions = styled('div', {
   justifyContent: 'flex-end',
 });
 
+const AnalysisSummary = styled('div', {
+  display: 'grid',
+  gap: '$1',
+  padding: '$4',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
+});
+
+const AnalysisGrid = styled('div', {
+  display: 'grid',
+  gap: '$4',
+});
+
+const DangerCard = styled(Card, {
+  display: 'grid',
+  gap: '$4',
+  borderColor: 'rgba(185, 58, 58, 0.18)',
+  backgroundColor: 'rgba(255, 250, 250, 0.92)',
+});
+
 const EmptyState = styled('div', {
   color: '$mutedText',
   lineHeight: 1.8,
 });
+
+const FILTERS = ['ALL', 'EXCELLENT', 'CORRECT', 'REVIEW', 'WRONG'] as const;
+type StatusFilter = (typeof FILTERS)[number];
 
 function toneForStatus(status: string) {
   if (status === 'EXCELLENT' || status === 'CORRECT') {
@@ -249,20 +172,26 @@ function modeLabel(mode: string) {
   if (mode === 'SELECT') {
     return '선택';
   }
-  return '랜덤';
+  return '학습';
 }
 
 function formatStamp(value: string) {
-  return value.slice(0, 16).replace('T', ' ');
+  return value.slice(0, 16).replace('T', ' ').replace(/-/g, '.');
 }
 
 export function RecordsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [standardsMap, setStandardsMap] = useState<Map<string, Standard>>(new Map());
   const [notice, setNotice] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [busyAttemptId, setBusyAttemptId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [unresolvedWrongCount, setUnresolvedWrongCount] = useState(0);
 
   async function loadDashboard() {
     if (!user) {
@@ -277,10 +206,13 @@ export function RecordsPage() {
         listUserStandardStats(user.id),
         listWrongNotes(user.id, true),
       ]);
+
       setNotice(standardsPayload.notice);
       setStats(buildDashboardStats(standardsPayload.standards, attempts, userStats, wrongNotes));
+      setStandardsMap(new Map(standardsPayload.standards.map((item) => [item.id, item])));
+      setUnresolvedWrongCount(wrongNotes.filter((item) => !item.is_resolved).length);
     } catch {
-      setNotice('학습기록을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setNotice('학습 기록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -312,9 +244,7 @@ export function RecordsPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      '전체 학습기록을 초기화할까요? 최근 풀이, 평균 점수, 진도 통계가 모두 다시 계산됩니다.',
-    );
+    const confirmed = window.confirm('전체 기록을 삭제할까요?\n\n삭제한 기록은 복구할 수 없습니다.');
     if (!confirmed) {
       return;
     }
@@ -326,48 +256,70 @@ export function RecordsPage() {
     setClearing(false);
   }
 
+  function goToReplay(standardId: string) {
+    const standard = standardsMap.get(standardId);
+    if (!standard) {
+      navigate(`/wrong/play?standardId=${standardId}&scope=all`);
+      return;
+    }
+
+    const partNo = standard.part_no ?? '';
+    const chapterNo = standard.chapter_no ?? '';
+    navigate(`/study/play?mode=select&partNo=${partNo}&chapterNo=${chapterNo}&standardId=${standardId}`);
+  }
+
+  const recent7DaysTotal = useMemo(
+    () => (stats ? stats.recent7Days.reduce((sum, item) => sum + item.count, 0) : 0),
+    [stats],
+  );
+
+  const filteredRecentAttempts = useMemo(() => {
+    if (!stats) {
+      return [];
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    return stats.recentAttempts.filter((item) => {
+      const matchesQuery = !query || item.standardTitle.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'ALL' || item.resultStatus === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [searchQuery, stats, statusFilter]);
+
+  const filteredWrongStandards = useMemo(() => {
+    if (!stats) {
+      return [];
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    return stats.frequentWrongStandards.filter((item) => !query || item.standardTitle.toLowerCase().includes(query));
+  }, [searchQuery, stats]);
+
   if (loading || !stats) {
-    return <Layout title="기록노트">불러오는 중...</Layout>;
+    return <Layout title="기록 노트">불러오는 중...</Layout>;
   }
 
   return (
-    <Layout title="기록노트" description="최근 흐름과 약점을 간결하게 확인합니다.">
-      <Hero>
-        <HeroTop>
-          <HeroCopy>
-            <Eyebrow>Records</Eyebrow>
-            <HeroTitle>기록을 빠르게 읽는 화면으로 정리했습니다.</HeroTitle>
-            <HeroDescription>점수, 진도, 자주 막히는 기준서를 한 화면에서 확인합니다.</HeroDescription>
-          </HeroCopy>
-          <HeroAside>
-            <MetricLabel>오늘 기록</MetricLabel>
-            <AsideValue>{stats.todayAttemptCount}문제</AsideValue>
-            <SectionDescription>{`평균 ${stats.averageScore}점 · 오답률 ${stats.overallWrongRate}%`}</SectionDescription>
-            <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => void loadDashboard()}>
-              새로고침
+    <Layout title="기록 노트" description="학습 기록과 오답 흐름을 확인합니다.">
+      <ControlsCard>
+        <SearchInput
+          placeholder="기준서 검색"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
+        <FilterRow>
+          {FILTERS.map((item) => (
+            <Button
+              key={item}
+              tone={statusFilter === item ? 'primary' : 'secondary'}
+              css={{ width: 'auto', minHeight: '44px', padding: '0 18px' }}
+              onClick={() => setStatusFilter(item)}
+            >
+              {item}
             </Button>
-          </HeroAside>
-        </HeroTop>
-
-        <MetricStrip>
-          <MetricTile>
-            <MetricLabel>누적 풀이</MetricLabel>
-            <MetricValue>{stats.totalAttempts}회</MetricValue>
-          </MetricTile>
-          <MetricTile>
-            <MetricLabel>전체 진도</MetricLabel>
-            <MetricValue>{stats.overallProgress}%</MetricValue>
-          </MetricTile>
-          <MetricTile>
-            <MetricLabel>평균 점수</MetricLabel>
-            <MetricValue>{stats.averageScore}점</MetricValue>
-          </MetricTile>
-          <MetricTile>
-            <MetricLabel>오답률</MetricLabel>
-            <MetricValue>{stats.overallWrongRate}%</MetricValue>
-          </MetricTile>
-        </MetricStrip>
-      </Hero>
+          ))}
+        </FilterRow>
+      </ControlsCard>
 
       {notice ? (
         <Card css={{ color: '$warning', backgroundColor: '$warningSoft', borderColor: 'rgba(123, 90, 25, 0.18)' }}>
@@ -376,184 +328,176 @@ export function RecordsPage() {
       ) : null}
 
       <StatsGrid>
-        <StatCard title="오늘" value={`${stats.todayAttemptCount}개`} description="오늘 풀이" />
-        <StatCard title="누적" value={`${stats.totalAttempts}회`} description="전체 기록" />
-        <StatCard title="평균" value={`${stats.averageScore}점`} description="평균 점수" />
-        <StatCard title="진도" value={`${stats.overallProgress}%`} description="전체 진행률" />
+        <StatCard title="오늘" value={`${stats.todayAttemptCount}문제`} />
+        <StatCard title="최근 7일" value={`${recent7DaysTotal}문제`} />
+        <StatCard title="미해결 오답" value={`${unresolvedWrongCount}개`} />
       </StatsGrid>
 
-      <AnalyticsGrid>
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>최근 7일 학습 흐름</SectionTitle>
-              <SectionDescription>최근 일주일 흐름입니다.</SectionDescription>
-            </div>
-            <Badge tone="primary">{stats.totalAttempts}회 누적</Badge>
-          </SectionHeader>
-          <LineChart
-            data={stats.recent7Days.map((item) => ({
-              label: item.date.slice(5).replace('-', '.'),
-              value: item.count,
-              caption: `${item.count}회`,
-            }))}
-          />
-          <StatusRow>
-            {stats.statusBreakdown.map((item) => (
-              <Badge key={item.label} tone={item.tone}>
-                {item.label} {item.count}
-              </Badge>
-            ))}
-          </StatusRow>
-        </SectionCard>
-
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>점수 분포</SectionTitle>
-              <SectionDescription>점수대 분포를 확인합니다.</SectionDescription>
-            </div>
-          </SectionHeader>
-          <BarChart
-            data={stats.scoreDistribution.map((item) => ({
-              label: item.label,
-              value: item.count,
-              displayValue: `${item.count}회`,
-            }))}
-          />
-          <Panel>
-            <MetricLabel>최근 7일 평균</MetricLabel>
-            <MetricValue>
-              {stats.recent7Days.reduce((sum, item) => sum + item.averageScore, 0) / Math.max(stats.recent7Days.length, 1) || 0}
-              점
-            </MetricValue>
-          </Panel>
-        </SectionCard>
-      </AnalyticsGrid>
-
-      <SplitGrid>
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>편별 진행률 / 오답률</SectionTitle>
-              <SectionDescription>편별 진도와 오답률입니다.</SectionDescription>
-            </div>
-          </SectionHeader>
-          <div style={{ display: 'grid', gap: 16 }}>
-            {stats.partProgress.map((item) => (
-              <Panel key={item.partNo}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                  <strong
-                    style={{
-                      color: '#173d7a',
-                      fontFamily:
-                        '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
-                      fontSize: 20,
-                    }}
+      <SectionCard>
+        <SectionHeader>
+          <SectionTitle>최근 기록</SectionTitle>
+          <SectionDescription>최근 풀이 내역</SectionDescription>
+        </SectionHeader>
+        <RecordList>
+          {filteredRecentAttempts.length === 0 ? (
+            <EmptyState>조건에 맞는 최근 기록이 없습니다.</EmptyState>
+          ) : (
+            filteredRecentAttempts.map((item: RecentStudyItem) => (
+              <RecordRow key={item.id}>
+                <RecordMeta>
+                  <RecordTitle>{item.standardTitle}</RecordTitle>
+                  <RecordSub>
+                    <Badge tone={toneForStatus(item.resultStatus)}>{item.resultStatus}</Badge>
+                    <span>{`${item.score}점`}</span>
+                    <span>{modeLabel(item.mode)}</span>
+                  </RecordSub>
+                  <RecordDate>{formatStamp(item.createdAt)}</RecordDate>
+                </RecordMeta>
+                <Actions>
+                  <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => goToReplay(item.standardId)}>
+                    다시 풀기
+                  </Button>
+                  <Button
+                    tone="ghost"
+                    css={{ width: 'auto', minHeight: '42px' }}
+                    disabled={busyAttemptId === item.id}
+                    onClick={() => void handleDeleteAttempt(item.id)}
                   >
-                    {item.partNo}편
-                  </strong>
-                  <Badge tone={item.wrongRate >= 50 ? 'danger' : item.wrongRate >= 25 ? 'warning' : 'success'}>
-                    오답률 {item.wrongRate}%
-                  </Badge>
-                </div>
-                <ProgressBar label={`${item.solvedCount}/${item.totalCount}개 풀이`} value={item.progressRate} />
-              </Panel>
-            ))}
-          </div>
-        </SectionCard>
+                    {busyAttemptId === item.id ? '삭제 중...' : '삭제'}
+                  </Button>
+                </Actions>
+              </RecordRow>
+            ))
+          )}
+        </RecordList>
+      </SectionCard>
 
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>LV별 정답률</SectionTitle>
-              <SectionDescription>난이도별 정답률입니다.</SectionDescription>
-            </div>
-          </SectionHeader>
-          <BarChart
-            data={stats.levelAccuracy.map((item) => ({
-              label: item.label,
-              value: item.accuracyRate,
-              displayValue: `${item.accuracyRate}%`,
-            }))}
-          />
-        </SectionCard>
-      </SplitGrid>
+      <SectionCard>
+        <SectionHeader>
+          <SectionTitle>다시 볼 기준서</SectionTitle>
+          <SectionDescription>미해결 오답 기준</SectionDescription>
+        </SectionHeader>
+        <RecordList>
+          {filteredWrongStandards.length === 0 ? (
+            <EmptyState>현재 다시 볼 기준서가 없습니다.</EmptyState>
+          ) : (
+            filteredWrongStandards.map((item) => (
+              <RecordRow key={item.standardId}>
+                <RecordMeta>
+                  <RecordTitle>{item.standardTitle}</RecordTitle>
+                  <RecordSub>
+                    <span>{`${item.wrongCount}회 틀림`}</span>
+                    <span>{`최근 ${item.lastAttemptedAt ? item.lastAttemptedAt.slice(0, 10).replace(/-/g, '.') : '-'}`}</span>
+                  </RecordSub>
+                </RecordMeta>
+                <Actions>
+                  <Button tone="ghost" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate('/wrong-notes')}>
+                    오답 보기
+                  </Button>
+                  <Button tone="secondary" css={{ width: 'auto', minHeight: '42px' }} onClick={() => navigate(`/wrong/play?standardId=${item.standardId}&scope=all`)}>
+                    다시 풀기
+                  </Button>
+                </Actions>
+              </RecordRow>
+            ))
+          )}
+        </RecordList>
+      </SectionCard>
 
-      <CompactGrid>
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>자주 틀린 기준서</SectionTitle>
-              <SectionDescription>자주 틀린 기준서입니다.</SectionDescription>
-            </div>
-          </SectionHeader>
-          <AttemptList>
-            {stats.frequentWrongStandards.length === 0 ? (
-              <EmptyState>아직 오답노트가 없습니다.</EmptyState>
-            ) : (
-              stats.frequentWrongStandards.map((item) => (
-                <AttemptRow key={item.standardId}>
-                  <AttemptMeta>
-                    <AttemptTitle>{item.standardTitle}</AttemptTitle>
-                    <AttemptSub>
-                      <span>{item.lastAttemptedAt ? formatStamp(item.lastAttemptedAt) : '기록 없음'}</span>
-                    </AttemptSub>
-                  </AttemptMeta>
-                  <Actions>
-                    <Badge tone="danger">{item.wrongCount}회</Badge>
-                  </Actions>
-                </AttemptRow>
-              ))
-            )}
-          </AttemptList>
-        </SectionCard>
+      <SectionCard>
+        <SectionHeader>
+          <SectionTitle>학습 분석</SectionTitle>
+          <SectionDescription>최근 흐름과 약점을 확인합니다.</SectionDescription>
+        </SectionHeader>
+        {!analysisOpen ? (
+          <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setAnalysisOpen(true)}>
+            분석 보기
+          </Button>
+        ) : (
+          <AnalysisGrid>
+            <AnalysisSummary>
+              <strong style={{ color: '#173d7a' }}>{`최근 7일 평균 ${Math.round(stats.recent7Days.reduce((sum, item) => sum + item.averageScore, 0) / Math.max(stats.recent7Days.length, 1))}점`}</strong>
+              <span style={{ color: '#6c7280' }}>
+                {stats.partProgress.some((item) => item.wrongRate >= 50)
+                  ? '오답률이 높은 편을 먼저 복습하세요.'
+                  : '최근 흐름은 안정적입니다.'}
+              </span>
+            </AnalysisSummary>
 
-        <SectionCard>
-          <SectionHeader>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <SectionTitle>기록 관리</SectionTitle>
-              <SectionDescription>기록을 개별 삭제하거나 전체 초기화할 수 있습니다.</SectionDescription>
-            </div>
-            <Button
-              tone="danger"
-              css={{ width: 'auto', minHeight: '44px', padding: '$2 $4' }}
-              onClick={() => void handleClearHistory()}
-              disabled={clearing || stats.totalAttempts === 0}
-            >
-              {clearing ? '초기화 중...' : '전체 기록 초기화'}
+            <SectionCard css={{ backgroundColor: '$surface' }}>
+              <SectionHeader>
+                <SectionTitle>최근 7일</SectionTitle>
+              </SectionHeader>
+              <LineChart
+                data={stats.recent7Days.map((item) => ({
+                  label: item.date.slice(5).replace('-', '.'),
+                  value: item.count,
+                  caption: `${item.count}회`,
+                }))}
+              />
+            </SectionCard>
+
+            <SectionCard css={{ backgroundColor: '$surface' }}>
+              <SectionHeader>
+                <SectionTitle>점수 분포</SectionTitle>
+              </SectionHeader>
+              <BarChart
+                data={stats.scoreDistribution.map((item) => ({
+                  label: item.label,
+                  value: item.count,
+                  displayValue: `${item.count}회`,
+                }))}
+              />
+            </SectionCard>
+
+            <SectionCard css={{ backgroundColor: '$surface' }}>
+              <SectionHeader>
+                <SectionTitle>편별 현황</SectionTitle>
+              </SectionHeader>
+              <div style={{ display: 'grid', gap: 16 }}>
+                {stats.partProgress.map((item) => (
+                  <div key={item.partNo} style={{ display: 'grid', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                      <strong style={{ color: '#173d7a', fontSize: 18 }}>{`${item.partNo}편`}</strong>
+                      <Badge tone={item.wrongRate >= 50 ? 'danger' : item.wrongRate >= 25 ? 'warning' : 'success'}>
+                        {`오답률 ${item.wrongRate}%`}
+                      </Badge>
+                    </div>
+                    <ProgressBar label={`${item.solvedCount}/${item.totalCount}개 풀이`} value={item.progressRate} />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard css={{ backgroundColor: '$surface' }}>
+              <SectionHeader>
+                <SectionTitle>LV별 정답률</SectionTitle>
+              </SectionHeader>
+              <BarChart
+                data={stats.levelAccuracy.map((item) => ({
+                  label: item.label,
+                  value: item.accuracyRate,
+                  displayValue: `${item.accuracyRate}%`,
+                }))}
+              />
+            </SectionCard>
+
+            <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setAnalysisOpen(false)}>
+              분석 닫기
             </Button>
-          </SectionHeader>
-          <AttemptList>
-            {stats.recentAttempts.length === 0 ? (
-              <EmptyState>아직 풀이 기록이 없습니다.</EmptyState>
-            ) : (
-              stats.recentAttempts.map((item) => (
-                <AttemptRow key={item.id}>
-                  <AttemptMeta>
-                    <AttemptTitle>{item.standardTitle}</AttemptTitle>
-                    <AttemptSub>
-                      <Badge tone="neutral">{modeLabel(item.mode)}</Badge>
-                      <span>{formatStamp(item.createdAt)}</span>
-                    </AttemptSub>
-                  </AttemptMeta>
-                  <Actions>
-                    <Badge tone={toneForStatus(item.resultStatus)}>{item.score}점</Badge>
-                    <Button
-                      tone="secondary"
-                      css={{ width: 'auto', minHeight: '40px', padding: '$2 $3', fontSize: '$1' }}
-                      onClick={() => void handleDeleteAttempt(item.id)}
-                      disabled={busyAttemptId === item.id}
-                    >
-                      {busyAttemptId === item.id ? '삭제 중...' : '기록 삭제'}
-                    </Button>
-                  </Actions>
-                </AttemptRow>
-              ))
-            )}
-          </AttemptList>
-        </SectionCard>
-      </CompactGrid>
+          </AnalysisGrid>
+        )}
+      </SectionCard>
+
+      <DangerCard>
+        <SectionHeader>
+          <SectionTitle>기록 관리</SectionTitle>
+          <SectionDescription>전체 기록을 삭제할 수 있습니다.</SectionDescription>
+        </SectionHeader>
+        <Button tone="danger" css={{ width: 'auto', minHeight: '44px' }} disabled={clearing} onClick={() => void handleClearHistory()}>
+          {clearing ? '삭제 중...' : '전체 기록 삭제'}
+        </Button>
+      </DangerCard>
     </Layout>
   );
 }

@@ -127,13 +127,20 @@ function buildDetailFeedback(metadata: GradingMetadata | null) {
     return null;
   }
 
-  const missingText =
-    missingPoints.length > 0
-      ? `부족한 키워드는 ${missingPoints.slice(0, 4).join(', ')}${missingPoints.length > 4 ? ' 등' : ''}입니다.`
-      : '';
+  const missingText = (() => {
+    if (missingPoints.length === 0) {
+      return '';
+    }
+
+    if (missingPoints.length === 1) {
+      return `${missingPoints[0]} 관련 설명이 빠져 감점되었습니다.`;
+    }
+
+    return `${missingPoints.slice(0, 3).join(', ')} 관련 설명이 부족해 핵심 요건 충족도가 낮아졌습니다.`;
+  })();
   const wrongConceptText =
     wrongConcepts.length > 0
-      ? `주의할 오개념은 ${wrongConcepts.slice(0, 2).join(', ')}${wrongConcepts.length > 2 ? ' 등' : ''}입니다.`
+      ? `${wrongConcepts.slice(0, 2).join(', ')}${wrongConcepts.length > 2 ? ' 등' : ''}처럼 오해될 표현이 있어 추가 감점되었습니다.`
       : '';
 
   return [missingText, wrongConceptText].filter(Boolean).join(' ');
