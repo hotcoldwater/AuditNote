@@ -1,5 +1,7 @@
 export type ResultStatus = 'EXCELLENT' | 'CORRECT' | 'REVIEW' | 'WRONG' | 'SKIPPED';
 export type GradingMethod = 'ai' | 'rule' | 'rule-fallback';
+export type WrongNoteStatus = 'WRONG' | 'REVIEW';
+export type IssueReportType = 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT';
 
 export type StudyMode = 'RANDOM' | 'PART' | 'WRONG_NOTE';
 
@@ -73,6 +75,7 @@ export interface WrongNote {
   user_id: string;
   standard_id: string;
   source: 'AUTO' | 'MANUAL';
+  note_status?: WrongNoteStatus;
   reason: string | null;
   is_resolved: boolean;
   wrong_count: number;
@@ -99,6 +102,16 @@ export interface GradingMetadata {
   gradingVersion?: string;
   fallbackNotice?: string | null;
   rawGradingResult: Record<string, unknown> | null;
+}
+
+export interface IssueReport {
+  id: string;
+  user_id: string;
+  standard_id: string;
+  report_type: IssueReportType;
+  result_status: ResultStatus | null;
+  detail: string | null;
+  created_at: string;
 }
 
 export interface RuleScoringResult {

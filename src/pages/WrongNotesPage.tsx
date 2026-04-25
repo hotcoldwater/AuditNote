@@ -7,7 +7,13 @@ import { Layout } from '../components/Layout';
 import { useAuth } from '../lib/auth';
 import { fetchActiveStandards } from '../lib/standards';
 import { listWrongNotes, resolveWrongNote } from '../lib/wrongNotes';
-import type { Standard, WrongNote } from '../types';
+import type { Standard, WrongNote, WrongNoteStatus } from '../types';
+
+const FILTERS: Array<{ key: 'ALL' | WrongNoteStatus; label: string }> = [
+  { key: 'ALL', label: '전체' },
+  { key: 'WRONG', label: 'WRONG' },
+  { key: 'REVIEW', label: 'REVIEW' },
+];
 
 export function WrongNotesPage() {
   const { user } = useAuth();
@@ -15,6 +21,7 @@ export function WrongNotesPage() {
   const [notes, setNotes] = useState<WrongNote[]>([]);
   const [standards, setStandards] = useState<Standard[]>([]);
   const [notice, setNotice] = useState<string | undefined>();
+  const [filter, setFilter] = useState<'ALL' | WrongNoteStatus>('ALL');
 
   async function load() {
     if (!user) {
@@ -32,17 +39,54 @@ export function WrongNotesPage() {
   }, [user?.id]);
 
   const standardsMap = useMemo(() => new Map(standards.map((item) => [item.id, item])), [standards]);
+  const filteredNotes = useMemo(
+    () => notes.filter((item) => filter === 'ALL' || (item.note_status ?? 'WRONG') === filter),
+    [filter, notes],
+  );
+  const wrongCount = notes.filter((item) => (item.note_status ?? 'WRONG') === 'WRONG').length;
+  const reviewCount = notes.filter((item) => (item.note_status ?? 'WRONG') === 'REVIEW').length;
 
   return (
-    <Layout title="오답노트" description="자동 등록과 수동 등록 문제를 한곳에서 관리합니다.">
+    <Layout title="오답노트" description="WRONG과 REVIEW를 나눠서 보고, 필요한 분류만 다시 풀 수 있습니다.">
       {notice ? <Card css={{ color: '$warning' }}>{notice}</Card> : null}
 
+      <Card css={{ display: 'grid', gap: '$4' }}>
+        <strong>오답 시작</strong>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=all')}>
+            전체 오답 시작
+          </Button>
+          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=wrong')}>
+            WRONG만 다시 풀기
+          </Button>
+          <Button tone="secondary" onClick={() => navigate('/wrong/play?scope=review')}>
+            REVIEW만 다시 풀기
+          </Button>
+        </div>
+      </Card>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {FILTERS.map((item) => (
+          <Button
+            key={item.key}
+            tone={filter === item.key ? 'primary' : 'secondary'}
+            css={{ width: 'auto', minHeight: '44px', padding: '0 18px' }}
+            onClick={() => setFilter(item.key)}
+          >
+            {item.label}
+          </Button>
+        ))}
+        <Badge tone="danger">{`WRONG ${wrongCount}`}</Badge>
+        <Badge tone="warning">{`REVIEW ${reviewCount}`}</Badge>
+      </div>
+
       <div style={{ display: 'grid', gap: 16 }}>
-        {notes.length === 0 ? (
-          <Card>현재 unresolved 오답노트가 없습니다.</Card>
+        {filteredNotes.length === 0 ? (
+          <Card>현재 선택한 분류에 unresolved 오답노트가 없습니다.</Card>
         ) : (
-          notes.map((note) => {
+          filteredNotes.map((note) => {
             const standard = standardsMap.get(note.standard_id);
+            const noteStatus = note.note_status ?? 'WRONG';
             return (
               <Card key={note.id} css={{ display: 'grid', gap: '$4' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
@@ -53,10 +97,10 @@ export function WrongNotesPage() {
                       {note.last_attempted_at ? note.last_attempted_at.slice(0, 10) : '-'}
                     </div>
                   </div>
-                  <Badge tone="danger">{note.wrong_count}회</Badge>
+                  <Badge tone={noteStatus === 'WRONG' ? 'danger' : 'warning'}>{noteStatus}</Badge>
                 </div>
                 <div style={{ display: 'grid', gap: 12 }}>
-                  <Button tone="secondary" onClick={() => navigate(`/wrong/play?standardId=${note.standard_id}`)}>
+                  <Button tone="secondary" onClick={() => navigate(`/wrong/play?standardId=${note.standard_id}&scope=${noteStatus.toLowerCase()}`)}>
                     해당 문제 다시 풀기
                   </Button>
                   <Button

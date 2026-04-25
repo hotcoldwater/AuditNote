@@ -34,6 +34,7 @@ create table if not exists public.standards (
   exam_years text[] not null default '{}',
   required_keywords text[] not null default '{}',
   optional_keywords text[] not null default '{}',
+  wrong_concepts text[] not null default '{}',
   tags text[] not null default '{}',
   is_active boolean not null default true,
   check_status text not null default 'DRAFT',
@@ -93,6 +94,7 @@ create table if not exists public.wrong_notes (
   user_id uuid not null references auth.users(id) on delete cascade,
   standard_id text not null references public.standards(id),
   source text not null default 'AUTO',
+  note_status text not null default 'WRONG',
   reason text,
   is_resolved boolean not null default false,
   wrong_count integer not null default 1,
@@ -102,9 +104,23 @@ create table if not exists public.wrong_notes (
   unique (user_id, standard_id)
 );
 
+alter table public.standards add column if not exists wrong_concepts text[] not null default '{}';
+alter table public.wrong_notes add column if not exists note_status text not null default 'WRONG';
+
+create table if not exists public.issue_reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  standard_id text not null references public.standards(id),
+  report_type text not null,
+  result_status text,
+  detail text,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_study_attempts_user_created_at on public.study_attempts (user_id, created_at desc);
 create index if not exists idx_user_standard_stats_user on public.user_standard_stats (user_id);
 create index if not exists idx_wrong_notes_user_resolved on public.wrong_notes (user_id, is_resolved);
+create index if not exists idx_issue_reports_user_created_at on public.issue_reports (user_id, created_at desc);
 
 drop trigger if exists trg_standards_updated_at on public.standards;
 create trigger trg_standards_updated_at
@@ -129,6 +145,7 @@ alter table public.standards enable row level security;
 alter table public.study_attempts enable row level security;
 alter table public.user_standard_stats enable row level security;
 alter table public.wrong_notes enable row level security;
+alter table public.issue_reports enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own"
@@ -209,4 +226,16 @@ create policy "wrong_notes_update_own"
 on public.wrong_notes
 for update
 using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "issue_reports_select_own" on public.issue_reports;
+create policy "issue_reports_select_own"
+on public.issue_reports
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "issue_reports_insert_own" on public.issue_reports;
+create policy "issue_reports_insert_own"
+on public.issue_reports
+for insert
 with check (auth.uid() = user_id);

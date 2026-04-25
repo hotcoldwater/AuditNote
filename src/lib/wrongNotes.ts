@@ -1,4 +1,4 @@
-import type { WrongNote } from '../types';
+import type { WrongNote, WrongNoteStatus } from '../types';
 import { getLocalWrongNotes, localStoreKeys, mergeLocalByUser } from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
@@ -21,17 +21,31 @@ function persistLocal(userId: string, notes: WrongNote[]) {
   mergeLocalByUser(localStoreKeys.WRONG_NOTES_KEY, userId, notes);
 }
 
-export async function listWrongNotes(userId: string, includeResolved = false): Promise<WrongNote[]> {
-  if (!isSupabaseConfigured || !supabase) {
-    return getLocalWrongNotes(userId)
+export async function listWrongNotes(
+  userId: string,
+  includeResolved = false,
+  statuses?: WrongNoteStatus[],
+): Promise<WrongNote[]> {
+  const statusSet = statuses?.length ? new Set(statuses) : null;
+  const applyLocalFilter = (items: WrongNote[]) =>
+    items
       .filter((item) => includeResolved || !item.is_resolved)
+      .filter((item) => !statusSet || statusSet.has((item.note_status ?? 'WRONG') as WrongNoteStatus))
       .sort((a, b) => (b.last_attempted_at ?? '').localeCompare(a.last_attempted_at ?? ''));
+
+  if (!isSupabaseConfigured || !supabase) {
+    return applyLocalFilter(getLocalWrongNotes(userId));
   }
 
   try {
     let query = supabase.from('wrong_notes').select('*').eq('user_id', userId);
     if (!includeResolved) {
       query = query.eq('is_resolved', false);
+    }
+    if (statuses?.length === 1) {
+      query = query.eq('note_status', statuses[0]);
+    } else if (statuses && statuses.length > 1) {
+      query = query.in('note_status', statuses);
     }
 
     const { data, error } = await withTimeout(query.order('updated_at', { ascending: false }), SUPABASE_TIMEOUT_MS);
@@ -42,9 +56,7 @@ export async function listWrongNotes(userId: string, includeResolved = false): P
 
     return (data ?? []) as WrongNote[];
   } catch {
-    return getLocalWrongNotes(userId)
-      .filter((item) => includeResolved || !item.is_resolved)
-      .sort((a, b) => (b.last_attempted_at ?? '').localeCompare(a.last_attempted_at ?? ''));
+    return applyLocalFilter(getLocalWrongNotes(userId));
   }
 }
 
@@ -52,6 +64,7 @@ export async function upsertWrongNote(
   userId: string,
   standardId: string,
   source: 'AUTO' | 'MANUAL',
+  noteStatus: WrongNoteStatus,
   reason?: string,
 ) {
   const now = new Date().toISOString();
@@ -63,6 +76,7 @@ export async function upsertWrongNote(
       ? {
           ...existing,
           source,
+          note_status: noteStatus,
           reason: reason ?? existing.reason,
           is_resolved: false,
           wrong_count: existing.wrong_count + (source === 'AUTO' ? 1 : 0),
@@ -74,6 +88,7 @@ export async function upsertWrongNote(
           user_id: userId,
           standard_id: standardId,
           source,
+          note_status: noteStatus,
           reason: reason ?? null,
           is_resolved: false,
           wrong_count: 1,
@@ -103,6 +118,7 @@ export async function upsertWrongNote(
       ? {
           ...existing,
           source,
+          note_status: noteStatus,
           reason: reason ?? existing.reason,
           is_resolved: false,
           wrong_count: existing.wrong_count + (source === 'AUTO' ? 1 : 0),
@@ -113,6 +129,7 @@ export async function upsertWrongNote(
           user_id: userId,
           standard_id: standardId,
           source,
+          note_status: noteStatus,
           reason: reason ?? null,
           is_resolved: false,
           wrong_count: 1,
@@ -140,6 +157,7 @@ export async function upsertWrongNote(
       ? {
           ...existing,
           source,
+          note_status: noteStatus,
           reason: reason ?? existing.reason,
           is_resolved: false,
           wrong_count: existing.wrong_count + (source === 'AUTO' ? 1 : 0),
@@ -151,6 +169,7 @@ export async function upsertWrongNote(
           user_id: userId,
           standard_id: standardId,
           source,
+          note_status: noteStatus,
           reason: reason ?? null,
           is_resolved: false,
           wrong_count: 1,
@@ -197,5 +216,5 @@ export async function resolveWrongNote(userId: string, standardId: string) {
 }
 
 export async function manuallyAddWrongNote(userId: string, standardId: string) {
-  return upsertWrongNote(userId, standardId, 'MANUAL', '사용자 수동 추가');
+  return upsertWrongNote(userId, standardId, 'MANUAL', 'REVIEW', '사용자 수동 복습 추가');
 }

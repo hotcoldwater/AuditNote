@@ -1,14 +1,16 @@
-import type { AuthUser, StudyAttempt, UserStandardStats, WrongNote } from '../types';
+import type { AuthUser, IssueReport, StudyAttempt, UserStandardStats, WrongNote } from '../types';
 
 const DEMO_USER_KEY = 'auditnote:demo-user';
 const ATTEMPTS_KEY = 'auditnote:attempts';
 const STATS_KEY = 'auditnote:stats';
 const WRONG_NOTES_KEY = 'auditnote:wrong-notes';
+const ISSUE_REPORTS_KEY = 'auditnote:issue-reports';
 
 const LEGACY_DEMO_USER_KEY = 'gamsanote:demo-user';
 const LEGACY_ATTEMPTS_KEY = 'gamsanote:attempts';
 const LEGACY_STATS_KEY = 'gamsanote:stats';
 const LEGACY_WRONG_NOTES_KEY = 'gamsanote:wrong-notes';
+const LEGACY_ISSUE_REPORTS_KEY = 'gamsanote:issue-reports';
 
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -53,6 +55,8 @@ function getLegacyKey(key: string) {
       return LEGACY_STATS_KEY;
     case WRONG_NOTES_KEY:
       return LEGACY_WRONG_NOTES_KEY;
+    case ISSUE_REPORTS_KEY:
+      return LEGACY_ISSUE_REPORTS_KEY;
     default:
       return '';
   }
@@ -105,6 +109,16 @@ export function setLocalWrongNotes(notes: WrongNote[]) {
   writeJson(WRONG_NOTES_KEY, notes);
 }
 
+export function getLocalIssueReports(userId: string) {
+  return readJsonWithLegacyFallback<IssueReport[]>(ISSUE_REPORTS_KEY, LEGACY_ISSUE_REPORTS_KEY, []).filter(
+    (item) => item.user_id === userId,
+  );
+}
+
+export function setLocalIssueReports(reports: IssueReport[]) {
+  writeJson(ISSUE_REPORTS_KEY, reports);
+}
+
 export function mergeLocalByUser<T extends { user_id: string }>(
   key: string,
   userId: string,
@@ -120,4 +134,5 @@ export const localStoreKeys = {
   ATTEMPTS_KEY,
   STATS_KEY,
   WRONG_NOTES_KEY,
+  ISSUE_REPORTS_KEY,
 };

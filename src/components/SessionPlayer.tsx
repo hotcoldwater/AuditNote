@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { gradeAnswer } from '../lib/aiGrading';
 import { recordStudyOutcome, loadUserStandardStatsMap } from '../lib/attempts';
 import { useAuth } from '../lib/auth';
+import { submitIssueReport } from '../lib/issueReports';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
 import { getStandardLocationLines } from '../lib/standardDisplay';
 import { fetchActiveStandards } from '../lib/standards';
@@ -109,10 +110,12 @@ export function SessionPlayer({
   mode,
   partNo,
   preferredStandardId,
+  wrongStatuses,
 }: {
   mode: StudyMode;
   partNo?: number | null;
   preferredStandardId?: string | null;
+  wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -141,23 +144,20 @@ export function SessionPlayer({
       const statsMap = await loadUserStandardStatsMap(user.id);
 
       if (mode === 'WRONG_NOTE') {
-        const [standardsPayload, wrongNotes] = await Promise.all([
-          fetchActiveStandards(),
-          listWrongNotes(user.id, false),
-        ]);
+        const [standardsPayload, wrongNotes] = await Promise.all([fetchActiveStandards(), listWrongNotes(user.id, false, wrongStatuses)]);
 
         const wrongIds = new Set(wrongNotes.filter((item) => !item.is_resolved).map((item) => item.standard_id));
         const candidates = standardsPayload.standards.filter((item) => wrongIds.has(item.id));
         const nextStandard = pickRandomWrongStandard(candidates, preferredStandardId, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
-        setAnswer(nextStandard ? statsMap.get(nextStandard.id)?.last_user_answer ?? '' : '');
+        setAnswer('');
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
         const nextStandard = pickWeightedRandomStandard(standardsPayload.standards, statsMap, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
-        setAnswer(nextStandard ? statsMap.get(nextStandard.id)?.last_user_answer ?? '' : '');
+        setAnswer('');
       }
     } catch {
       setCurrent(null);
@@ -223,6 +223,15 @@ export function SessionPlayer({
     }
 
     await manuallyAddWrongNote(user.id, current.id);
+  }
+
+  async function handleReportIssue(reportType: 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT', detail?: string) {
+    if (!user || !current || !result) {
+      return '신고 대상을 찾지 못했습니다.';
+    }
+
+    const payload = await submitIssueReport(user.id, current.id, reportType, result.resultStatus, detail);
+    return payload.notice;
   }
 
   if (loading) {
@@ -295,6 +304,7 @@ export function SessionPlayer({
           result={result}
           metadata={gradingMetadata}
           onAddWrongNote={handleManualWrongNote}
+          onReportIssue={handleReportIssue}
           onNext={() => void loadQuestion(current.id)}
           onExit={() => navigate('/')}
         />

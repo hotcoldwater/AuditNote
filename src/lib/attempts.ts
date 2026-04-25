@@ -57,7 +57,7 @@ function buildAttempt(
   userId: string,
   standardId: string,
   mode: StudyMode,
-  userAnswer: string,
+  _userAnswer: string,
   scoring: ScoringResult,
   gradingMetadata: GradingMetadata,
 ): StudyAttempt {
@@ -66,7 +66,7 @@ function buildAttempt(
     user_id: userId,
     standard_id: standardId,
     mode,
-    user_answer: userAnswer,
+    user_answer: '',
     score: scoring.score,
     result_status: scoring.resultStatus,
     grading_method: gradingMetadata.gradingMethod,
@@ -112,7 +112,6 @@ function buildNextStats(
   const isCorrect = scoring.resultStatus === 'CORRECT' || scoring.resultStatus === 'EXCELLENT';
   const isWrong = scoring.resultStatus === 'WRONG';
   const isReview = scoring.resultStatus === 'REVIEW';
-  const isSkipped = scoring.resultStatus === 'SKIPPED';
 
   return {
     user_id: userId,
@@ -121,15 +120,12 @@ function buildNextStats(
     correct_count: (current?.correct_count ?? 0) + (isCorrect ? 1 : 0),
     wrong_count: (current?.wrong_count ?? 0) + (isWrong ? 1 : 0),
     review_count: (current?.review_count ?? 0) + (isReview ? 1 : 0),
-    skipped_count: (current?.skipped_count ?? 0) + (isSkipped ? 1 : 0),
+    skipped_count: current?.skipped_count ?? 0,
     last_score: scoring.score,
     last_result_status: scoring.resultStatus,
     consecutive_correct_count: isCorrect ? (current?.consecutive_correct_count ?? 0) + 1 : 0,
-    consecutive_wrong_count:
-      scoring.resultStatus === 'WRONG' || scoring.resultStatus === 'SKIPPED'
-        ? (current?.consecutive_wrong_count ?? 0) + 1
-        : 0,
-    last_user_answer: userAnswer.trim() || null,
+    consecutive_wrong_count: scoring.resultStatus === 'WRONG' ? (current?.consecutive_wrong_count ?? 0) + 1 : 0,
+    last_user_answer: null,
     last_attempted_at: now,
     updated_at: now,
   } satisfies UserStandardStats;
@@ -173,7 +169,7 @@ function buildDerivedStats(userId: string, standardId: string, attempts: StudyAt
     last_result_status: latest.result_status,
     consecutive_correct_count: consecutiveCorrectCount,
     consecutive_wrong_count: consecutiveWrongCount,
-    last_user_answer: latest.user_answer?.trim() || null,
+    last_user_answer: null,
     last_attempted_at: latest.created_at,
     updated_at: new Date().toISOString(),
   };
@@ -185,7 +181,9 @@ function buildDerivedWrongNote(existing: WrongNote | undefined, attempts: StudyA
   }
 
   const wrongAttempts = sortAttempts(
-    attempts.filter((item) => item.result_status === 'WRONG' || item.result_status === 'SKIPPED'),
+    attempts.filter((item) =>
+      existing.note_status === 'REVIEW' ? item.result_status === 'REVIEW' : item.result_status === 'WRONG',
+    ),
   );
   const wrongCount = wrongAttempts.length;
   const lastWrongAttemptedAt = wrongAttempts[0]?.created_at ?? existing.last_attempted_at ?? null;
@@ -194,9 +192,9 @@ function buildDerivedWrongNote(existing: WrongNote | undefined, attempts: StudyA
   if (existing.source === 'MANUAL') {
     return {
       ...existing,
-      wrong_count: wrongCount,
+      wrong_count: Math.max(existing.wrong_count, wrongCount || 1),
       last_attempted_at: lastWrongAttemptedAt,
-      is_resolved: wrongCount > 0 ? false : existing.is_resolved,
+      is_resolved: existing.is_resolved,
       updated_at: now,
     } satisfies WrongNote;
   }
@@ -363,12 +361,16 @@ export async function recordStudyOutcome(
   let notice: string | undefined;
 
   const localPersist = async (message: string) => {
+    if (scoring.resultStatus === 'SKIPPED') {
+      notice = message;
+      return { attempt: null, stats: null, notice };
+    }
     const currentStats = getLocalStats(userId).find((item) => item.standard_id === standard.id);
     const nextStat = buildNextStats(userId, standard.id, currentStats, scoring, userAnswer);
     persistLocalAttempt(userId, attempt);
     persistLocalStats(userId, nextStat);
-    if (scoring.shouldAddWrongNote) {
-      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI채점 결과에 따른 자동 등록');
+    if (scoring.resultStatus === 'WRONG' || scoring.resultStatus === 'REVIEW') {
+      await upsertWrongNote(userId, standard.id, 'AUTO', scoring.resultStatus, 'AI채점 결과에 따른 자동 등록');
     }
     notice = message;
     return { attempt, stats: nextStat, notice };
@@ -381,6 +383,10 @@ export async function recordStudyOutcome(
   let saveStage = '현재 학습 상태 조회';
 
   try {
+    if (scoring.resultStatus === 'SKIPPED') {
+      return { attempt: null, stats: null, notice: 'SKIP은 저장되지 않습니다.' };
+    }
+
     const { data: currentStatsRow } = await withTimeout(
       supabase
         .from('user_standard_stats')
@@ -416,9 +422,9 @@ export async function recordStudyOutcome(
       throw statsError;
     }
 
-    if (scoring.shouldAddWrongNote) {
+    if (scoring.resultStatus === 'WRONG' || scoring.resultStatus === 'REVIEW') {
       saveStage = '오답노트 저장';
-      await upsertWrongNote(userId, standard.id, 'AUTO', 'AI채점 결과에 따른 자동 등록');
+      await upsertWrongNote(userId, standard.id, 'AUTO', scoring.resultStatus, 'AI채점 결과에 따른 자동 등록');
     }
 
     return { attempt, stats: nextStat, notice };

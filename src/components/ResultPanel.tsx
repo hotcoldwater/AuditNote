@@ -1,4 +1,5 @@
-import type { GradingMetadata, ScoringResult, Standard } from '../types';
+import { useState } from 'react';
+import type { GradingMetadata, IssueReportType, ScoringResult, Standard } from '../types';
 import { formatAnswerForDisplay, formatExamYears, getStandardSourceRefText } from '../lib/standardDisplay';
 import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
@@ -88,6 +89,19 @@ const List = styled('ul', {
   lineHeight: 1.7,
 });
 
+const TextInput = styled('textarea', {
+  width: '100%',
+  minHeight: '96px',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$panel',
+  color: '$text',
+  padding: '$4',
+  resize: 'vertical',
+  fontFamily: '$body',
+  fontSize: '$2',
+  lineHeight: 1.7,
+});
+
 function badgeTone(score: number) {
   if (score >= 90) {
     return 'success';
@@ -107,6 +121,7 @@ export function ResultPanel({
   result,
   metadata,
   onAddWrongNote,
+  onReportIssue,
   onNext,
   onExit,
 }: {
@@ -115,10 +130,16 @@ export function ResultPanel({
   result: ScoringResult;
   metadata: GradingMetadata | null;
   onAddWrongNote: () => Promise<void> | void;
+  onReportIssue: (reportType: IssueReportType, detail?: string) => Promise<string | void> | string | void;
   onNext: () => void;
   onExit: () => void;
 }) {
   const examYears = formatExamYears(standard.exam_years);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportDetail, setReportDetail] = useState('');
+  const [reportNotice, setReportNotice] = useState<string | null>(null);
+
+  const canManualAdd = result.resultStatus === 'CORRECT' || result.resultStatus === 'EXCELLENT';
 
   return (
     <Card css={{ display: 'grid', gap: '$6', '&::before': { display: 'none' } }}>
@@ -172,8 +193,9 @@ export function ResultPanel({
               <AnswerMetaTitle>{standard.title}</AnswerMetaTitle>
             </TitleRow>
             <SectionTitle>{getStandardSourceRefText(standard)}</SectionTitle>
-            {examYears ? <Reference>{`출제연도 ${examYears}`}</Reference> : null}
+            {examYears ? <Reference>{`출제: ${examYears}`}</Reference> : null}
           </AnswerMeta>
+          <Reference>모범답안</Reference>
           <Body>{formatAnswerForDisplay(standard.answer)}</Body>
         </Section>
         <Section>
@@ -183,9 +205,54 @@ export function ResultPanel({
       </Stack>
 
       <div style={{ display: 'grid', gap: 12 }}>
-        <Button tone="ghost" onClick={() => void onAddWrongNote()}>
-          오답노트 추가
+        {canManualAdd ? (
+          <Button tone="ghost" onClick={() => void onAddWrongNote()}>
+            오답노트로 보내기
+          </Button>
+        ) : null}
+        <Button tone="ghost" onClick={() => setReportOpen((prev) => !prev)}>
+          이의제기
         </Button>
+        {reportOpen ? (
+          <Section css={{ padding: '$4', border: '1px solid $borderSoft', backgroundColor: '$surface' }}>
+            <Reference>신고 사유</Reference>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <Button
+                tone="secondary"
+                onClick={async () => {
+                  const notice = await onReportIssue('QUESTION_AMBIGUOUS', reportDetail);
+                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
+                }}
+              >
+                1. 문제가 애매함
+              </Button>
+              <Button
+                tone="secondary"
+                onClick={async () => {
+                  const notice = await onReportIssue('ANSWER_INCORRECT', reportDetail);
+                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
+                }}
+              >
+                2. 답안이 이상함
+              </Button>
+              <Button
+                tone="secondary"
+                onClick={async () => {
+                  const notice = await onReportIssue('GRADING_INCORRECT', reportDetail);
+                  setReportNotice(typeof notice === 'string' ? notice : '신고가 접수되었습니다.');
+                }}
+              >
+                3. 채점이 이상함
+              </Button>
+            </div>
+            <TextInput
+              placeholder="추가 설명이 있으면 적어 주세요. 비워도 신고는 가능합니다."
+              value={reportDetail}
+              onChange={(event) => setReportDetail(event.target.value)}
+            />
+            {reportNotice ? <Hint>{reportNotice}</Hint> : null}
+          </Section>
+        ) : null}
         <Button onClick={onNext}>다음 문제</Button>
         <Button tone="secondary" onClick={onExit}>
           학습 종료
