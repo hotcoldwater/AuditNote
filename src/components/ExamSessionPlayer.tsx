@@ -169,12 +169,14 @@ export function ExamSessionPlayer({
   partNo,
   chapterNo,
   preferredQuestionId,
+  excludeSolved,
   wrongStatuses,
 }: {
   mode?: 'RANDOM' | 'SELECT' | 'WRONG_NOTE';
   partNo?: number | null;
   chapterNo?: number | null;
   preferredQuestionId?: string | null;
+  excludeSolved?: boolean;
   wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
   const { user, loading: authLoading } = useAuth();
@@ -209,16 +211,25 @@ export function ExamSessionPlayer({
     try {
       const [questionsPayload, latestAttemptMap] = await Promise.all([fetchExamQuestions(partNo, chapterNo), loadLatestExamAttemptMap(user.id)]);
       let nextQuestion: ExamQuestion | null = null;
+      const solvedQuestionIds = new Set(
+        [...latestAttemptMap.entries()]
+          .filter(([, attempt]) => attempt.result_status === 'CORRECT' || attempt.result_status === 'EXCELLENT')
+          .map(([questionId]) => questionId),
+      );
+      const baseQuestions =
+        excludeSolved && mode !== 'SELECT'
+          ? questionsPayload.questions.filter((item) => !solvedQuestionIds.has(item.id))
+          : questionsPayload.questions;
 
       if (mode === 'WRONG_NOTE') {
         const wrongItems = await listLatestExamWrongAttempts(user.id, wrongStatuses);
         const wrongIds = new Set(wrongItems.map((item) => item.latestAttempt.question_id));
-        const candidates = questionsPayload.questions.filter((item) => wrongIds.has(item.id));
+        const candidates = baseQuestions.filter((item) => wrongIds.has(item.id));
         nextQuestion = pickRandomQuestion(candidates, preferredQuestionId, excludeQuestionId);
       } else if (mode === 'SELECT') {
         nextQuestion = pickSequentialQuestion(questionsPayload.questions, preferredQuestionId, excludeQuestionId);
       } else {
-        nextQuestion = pickRandomQuestion(questionsPayload.questions, preferredQuestionId, excludeQuestionId);
+        nextQuestion = pickRandomQuestion(baseQuestions, preferredQuestionId, excludeQuestionId);
       }
 
       setNotice(questionsPayload.notice);
@@ -332,7 +343,7 @@ export function ExamSessionPlayer({
         <TitleRow>
           <LevelBox>{`문제 ${current.problem_no ?? '-'}`}</LevelBox>
           <Title>{current.section_title || '기출문제'}</Title>
-          {latestAttempt?.result_status ? <HistoryBadge>{`최근 이력 ${latestAttempt.result_status}`}</HistoryBadge> : null}
+          {latestAttempt?.result_status ? <HistoryBadge>{latestAttempt.result_status}</HistoryBadge> : null}
         </TitleRow>
 
         <QuestionBody>{formatExamText(current.question_text)}</QuestionBody>

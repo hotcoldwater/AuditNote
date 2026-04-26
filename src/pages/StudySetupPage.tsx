@@ -34,6 +34,10 @@ const StudyButton = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
+  gap: '$2',
+  alignContent: 'center',
+  justifyItems: 'center',
+  textAlign: 'center',
   minHeight: '108px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -57,10 +61,16 @@ const StudyButton = styled('button', {
 });
 
 const ButtonLabel = styled('div', {
-  fontSize: '$3',
+  fontSize: '$4',
   fontWeight: 700,
   color: '$primary',
   lineHeight: 1.3,
+});
+
+const ButtonMeta = styled('div', {
+  fontSize: '$2',
+  color: '$mutedText',
+  lineHeight: 1.6,
 });
 
 const HeaderCard = styled(Card, {
@@ -299,6 +309,7 @@ export function StudySetupPage() {
                   disabled={!parts.includes(partNo)}
                 >
                   <ButtonLabel>{partNo}편</ButtonLabel>
+                  <ButtonMeta>{getStudyPartTitle(partNo)}</ButtonMeta>
                 </StudyButton>
               ))}
 
@@ -354,6 +365,7 @@ export function StudySetupPage() {
                     disabled={!parts.includes(partNo)}
                   >
                     <ButtonLabel>{partNo}편</ButtonLabel>
+                    <ButtonMeta>{getStudyPartTitle(partNo)}</ButtonMeta>
                   </StudyButton>
                 ))}
               </ChoiceGrid>
@@ -364,6 +376,7 @@ export function StudySetupPage() {
                 {chapterGroups.map((chapter) => (
                   <StudyButton key={chapter.chapterNo} onClick={() => setSelectedChapterNo(chapter.chapterNo)}>
                     <ButtonLabel>{chapter.label}</ButtonLabel>
+                    <ButtonMeta>{`${chapter.standards.length}개 기준서`}</ButtonMeta>
                   </StudyButton>
                 ))}
               </ChoiceGrid>
@@ -374,6 +387,7 @@ export function StudySetupPage() {
                 <div style={{ color: '#6f7d90', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.label}`}</div>
                 <ListGrid>
                   {currentChapter.standards.map((standard, index) => {
+                    const locationLines = getStandardLocationLines(standard);
                     const lastResultStatus = statsMap.get(standard.id)?.last_result_status;
                     return (
                       <ListButton
@@ -388,7 +402,8 @@ export function StudySetupPage() {
                           <strong style={{ color: '#173d7a', fontSize: 16, lineHeight: 1.5 }}>{`${index + 1}. ${standard.title}`}</strong>
                           <Chip>{`Lv${standard.level}`}</Chip>
                         </RowTop>
-                        {lastResultStatus ? <HistoryText>{`최근 이력 ${lastResultStatus}`}</HistoryText> : null}
+                        <ButtonMeta css={{ textAlign: 'left' }}>{locationLines[2] ?? currentChapter.label}</ButtonMeta>
+                        {lastResultStatus ? <HistoryText>{lastResultStatus}</HistoryText> : null}
                       </ListButton>
                     );
                   })}

@@ -32,6 +32,10 @@ const ChoiceCard = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
+  gap: '$2',
+  alignContent: 'center',
+  justifyItems: 'center',
+  textAlign: 'center',
   minHeight: '108px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -47,10 +51,16 @@ const ChoiceCard = styled('button', {
 });
 
 const ButtonLabel = styled('div', {
-  fontSize: '$3',
+  fontSize: '$4',
   fontWeight: 700,
   color: '$primary',
   lineHeight: 1.3,
+});
+
+const ButtonMeta = styled('div', {
+  fontSize: '$2',
+  color: '$mutedText',
+  lineHeight: 1.6,
 });
 
 const HeaderCard = styled(Card, {
@@ -69,6 +79,28 @@ const ActionRow = styled('div', {
   display: 'flex',
   gap: '$2',
   flexWrap: 'wrap',
+});
+
+const FilterLabel = styled('label', {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '$2',
+  width: 'fit-content',
+  minHeight: '44px',
+  padding: '0 14px',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
+  color: '$primary',
+  fontSize: '$2',
+  fontWeight: 700,
+  cursor: 'pointer',
+});
+
+const FilterCheckbox = styled('input', {
+  width: '16px',
+  height: '16px',
+  margin: 0,
+  accentColor: '$primary',
 });
 
 const ListCard = styled(Card, {
@@ -256,6 +288,7 @@ export function ExamNotesPage() {
   const [setupMode, setSetupMode] = useState<SetupMode>(null);
   const [selectedPartNo, setSelectedPartNo] = useState<number | null>(null);
   const [selectedChapterNo, setSelectedChapterNo] = useState<number | null>(null);
+  const [excludeSolved, setExcludeSolved] = useState(false);
   const [latestAttemptMap, setLatestAttemptMap] = useState<Map<string, ExamAttempt>>(new Map());
 
   useEffect(() => {
@@ -347,6 +380,14 @@ export function ExamNotesPage() {
                 <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
                   방식 다시 선택
                 </Button>
+                <FilterLabel>
+                  <FilterCheckbox
+                    type="checkbox"
+                    checked={excludeSolved}
+                    onChange={(event) => setExcludeSolved(event.target.checked)}
+                  />
+                  맞춘 문제 제외
+                </FilterLabel>
               </ActionRow>
             </HeaderCard>
 
@@ -354,16 +395,22 @@ export function ExamNotesPage() {
               {availableParts.map((partNo) => {
                 const partQuestions = questions.filter((item) => item.part_no === partNo);
                 return (
-                  <ChoiceCard key={partNo} onClick={() => navigate(`/exam-notes/play?mode=part&partNo=${partNo}`)}>
+                  <ChoiceCard
+                    key={partNo}
+                    onClick={() =>
+                      navigate(`/exam-notes/play?mode=part&partNo=${partNo}${excludeSolved ? '&excludeSolved=1' : ''}`)
+                    }
+                  >
                     <ButtonLabel>{`${partNo}편`}</ButtonLabel>
-                    {partQuestions.length > 0 ? <HistoryText>{`${partQuestions.length}문제`}</HistoryText> : null}
+                    <ButtonMeta>{getPartTitle(questions, partNo)}</ButtonMeta>
+                    {partQuestions.length > 0 ? <ButtonMeta>{`${partQuestions.length}문제`}</ButtonMeta> : null}
                   </ChoiceCard>
                 );
               })}
 
-              <ChoiceCard onClick={() => navigate('/exam-notes/play?mode=random')}>
+              <ChoiceCard onClick={() => navigate(`/exam-notes/play?mode=random${excludeSolved ? '&excludeSolved=1' : ''}`)}>
                 <ButtonLabel>전체</ButtonLabel>
-                {!loading ? <HistoryText>{`${questions.length}문제`}</HistoryText> : null}
+                {!loading ? <ButtonMeta>{`${questions.length}문제`}</ButtonMeta> : null}
               </ChoiceCard>
             </ChoiceGrid>
           </Stack>
@@ -404,7 +451,8 @@ export function ExamNotesPage() {
                   return (
                     <ChoiceCard key={partNo} onClick={() => setSelectedPartNo(partNo)}>
                       <ButtonLabel>{`${partNo}편`}</ButtonLabel>
-                      {partQuestions.length > 0 ? <HistoryText>{`${partQuestions.length}문제`}</HistoryText> : null}
+                      <ButtonMeta>{getPartTitle(questions, partNo)}</ButtonMeta>
+                      {partQuestions.length > 0 ? <ButtonMeta>{`${partQuestions.length}문제`}</ButtonMeta> : null}
                     </ChoiceCard>
                   );
                 })}
@@ -416,7 +464,8 @@ export function ExamNotesPage() {
                 {chapterGroups.map((chapter) => (
                   <ChoiceCard key={chapter.chapterNo} onClick={() => setSelectedChapterNo(chapter.chapterNo)}>
                     <ButtonLabel>{`${chapter.chapterNo}장`}</ButtonLabel>
-                    {chapter.questionCount > 0 ? <HistoryText>{`${chapter.questionCount}문제`}</HistoryText> : null}
+                    <ButtonMeta>{chapter.chapterTitle || `${chapter.chapterNo}장`}</ButtonMeta>
+                    {chapter.questionCount > 0 ? <ButtonMeta>{`${chapter.questionCount}문제`}</ButtonMeta> : null}
                   </ChoiceCard>
                 ))}
               </ChoiceGrid>
@@ -443,7 +492,7 @@ export function ExamNotesPage() {
                           </strong>
                           <Chip>{question.exam_years[0] ? `${question.exam_years[0]}` : `Q${question.problem_no ?? '-'}`}</Chip>
                         </RowTop>
-                        {lastResultStatus ? <HistoryText>{`최근 이력 ${lastResultStatus}`}</HistoryText> : null}
+                        {lastResultStatus ? <HistoryText>{lastResultStatus}</HistoryText> : null}
                       </ListButton>
                     );
                   })}

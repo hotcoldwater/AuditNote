@@ -335,9 +335,7 @@ export function SessionPlayer({
           <TitleRow>
             <LevelBox>{`Lv${current.level}`}</LevelBox>
             <Title>{current.title}</Title>
-            {currentHistory?.last_result_status ? (
-              <HistoryBadge>{`최근 이력 ${currentHistory.last_result_status}`}</HistoryBadge>
-            ) : null}
+            {currentHistory?.last_result_status ? <HistoryBadge>{currentHistory.last_result_status}</HistoryBadge> : null}
           </TitleRow>
         </MetaSection>
 
