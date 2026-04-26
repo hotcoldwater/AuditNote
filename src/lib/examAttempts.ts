@@ -102,6 +102,34 @@ export async function loadLatestExamAttemptMap(userId: string) {
   return latestMap;
 }
 
+export async function listLatestExamWrongAttempts(
+  userId: string,
+  statuses?: Array<'WRONG' | 'REVIEW'>,
+) {
+  const attempts = await listExamAttempts(userId);
+  const latestMap = new Map<string, ExamAttempt>();
+  const wrongCountMap = new Map<string, number>();
+
+  for (const attempt of attempts) {
+    if (!latestMap.has(attempt.question_id)) {
+      latestMap.set(attempt.question_id, attempt);
+    }
+
+    if (attempt.result_status === 'WRONG' || attempt.result_status === 'REVIEW') {
+      wrongCountMap.set(attempt.question_id, (wrongCountMap.get(attempt.question_id) ?? 0) + 1);
+    }
+  }
+
+  return [...latestMap.values()]
+    .filter((attempt) => attempt.result_status === 'WRONG' || attempt.result_status === 'REVIEW')
+    .filter((attempt) => !statuses || statuses.includes(attempt.result_status as 'WRONG' | 'REVIEW'))
+    .map((attempt) => ({
+      latestAttempt: attempt,
+      wrongCount: wrongCountMap.get(attempt.question_id) ?? 0,
+    }))
+    .sort((a, b) => b.latestAttempt.created_at.localeCompare(a.latestAttempt.created_at));
+}
+
 export async function recordExamAttempt(
   userId: string,
   question: ExamQuestion,

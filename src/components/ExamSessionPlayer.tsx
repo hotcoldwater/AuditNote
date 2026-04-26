@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gradeExamAnswer } from '../lib/examGrading';
-import { loadLatestExamAttemptMap, recordExamAttempt } from '../lib/examAttempts';
-import { fetchExamQuestions } from '../lib/examQuestions';
+import { listLatestExamWrongAttempts, loadLatestExamAttemptMap, recordExamAttempt } from '../lib/examAttempts';
+import { fetchExamQuestions, formatExamText } from '../lib/examQuestions';
 import { useAuth } from '../lib/auth';
 import type { ExamAttempt, ExamGradingPayload, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
 import { Button } from './Button';
@@ -93,9 +93,20 @@ const HistoryBadge = styled('span', {
 const Title = styled('h2', {
   margin: 0,
   fontFamily: '$heading',
-  fontSize: '$5',
-  lineHeight: 1.26,
+  fontSize: '$4',
+  lineHeight: 1.5,
   color: '$primary',
+});
+
+const QuestionBody = styled('div', {
+  backgroundColor: '$panel',
+  border: '1px solid $borderSoft',
+  padding: '$5',
+  color: '$text',
+  fontSize: '$3',
+  lineHeight: 1.9,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'keep-all',
 });
 
 function pickSequentialQuestion(
@@ -124,22 +135,47 @@ function pickSequentialQuestion(
   return questions[0] ?? null;
 }
 
+function pickRandomQuestion(questions: ExamQuestion[], preferredQuestionId?: string | null, excludeQuestionId?: string | null) {
+  if (questions.length === 0) {
+    return null;
+  }
+
+  if (preferredQuestionId) {
+    const preferred = questions.find((item) => item.id === preferredQuestionId);
+    if (preferred) {
+      return preferred;
+    }
+  }
+
+  const pool = excludeQuestionId ? questions.filter((item) => item.id !== excludeQuestionId) : questions;
+  if (pool.length === 0) {
+    return questions[0] ?? null;
+  }
+
+  const index = Math.floor(Math.random() * pool.length);
+  return pool[index] ?? pool[0] ?? null;
+}
+
 function buildLocationLines(question: ExamQuestion) {
   return [
-    `${question.part_no}편: ${question.part_title}`,
-    `${question.chapter_no}장: ${question.chapter_title}`,
+    `${question.part_no}편: ${question.part_title || `${question.part_no}편`}`,
+    `${question.chapter_no}장: ${question.chapter_title || `${question.chapter_no}장`}`,
     question.section_title ? `${question.section_no ?? ''}절: ${question.section_title}` : null,
   ].filter(Boolean) as string[];
 }
 
 export function ExamSessionPlayer({
+  mode,
   partNo,
   chapterNo,
   preferredQuestionId,
+  wrongStatuses,
 }: {
+  mode?: 'RANDOM' | 'SELECT' | 'WRONG_NOTE';
   partNo?: number | null;
   chapterNo?: number | null;
   preferredQuestionId?: string | null;
+  wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -171,12 +207,20 @@ export function ExamSessionPlayer({
     setLatestAttempt(null);
 
     try {
-      const [questionsPayload, latestAttemptMap] = await Promise.all([
-        fetchExamQuestions(partNo, chapterNo),
-        loadLatestExamAttemptMap(user.id),
-      ]);
+      const [questionsPayload, latestAttemptMap] = await Promise.all([fetchExamQuestions(partNo, chapterNo), loadLatestExamAttemptMap(user.id)]);
+      let nextQuestion: ExamQuestion | null = null;
 
-      const nextQuestion = pickSequentialQuestion(questionsPayload.questions, preferredQuestionId, excludeQuestionId);
+      if (mode === 'WRONG_NOTE') {
+        const wrongItems = await listLatestExamWrongAttempts(user.id, wrongStatuses);
+        const wrongIds = new Set(wrongItems.map((item) => item.latestAttempt.question_id));
+        const candidates = questionsPayload.questions.filter((item) => wrongIds.has(item.id));
+        nextQuestion = pickRandomQuestion(candidates, preferredQuestionId, excludeQuestionId);
+      } else if (mode === 'SELECT') {
+        nextQuestion = pickSequentialQuestion(questionsPayload.questions, preferredQuestionId, excludeQuestionId);
+      } else {
+        nextQuestion = pickRandomQuestion(questionsPayload.questions, preferredQuestionId, excludeQuestionId);
+      }
+
       setNotice(questionsPayload.notice);
       setCurrent(nextQuestion);
       setLatestAttempt(nextQuestion ? latestAttemptMap.get(nextQuestion.id) ?? null : null);
@@ -258,10 +302,10 @@ export function ExamSessionPlayer({
   if (!current) {
     return (
       <Card css={{ display: 'grid', gap: '$4' }}>
-        <strong>출제 가능한 기출문제가 없습니다.</strong>
-        <Notice>선택한 범위의 문제를 모두 확인했습니다.</Notice>
-        <Button onClick={() => navigate('/exam-notes')} tone="secondary">
-          기출노트로 돌아가기
+        <strong>{mode === 'WRONG_NOTE' ? '현재 기출 오답에 풀 문제가 없습니다.' : '출제 가능한 기출문제가 없습니다.'}</strong>
+        <Notice>{mode === 'WRONG_NOTE' ? '최근 기출 오답이 없거나 모두 다시 확인했습니다.' : '선택한 범위의 문제를 모두 확인했습니다.'}</Notice>
+        <Button onClick={() => navigate(mode === 'WRONG_NOTE' ? '/wrong-notes/exam' : '/exam-notes')} tone="secondary">
+          {mode === 'WRONG_NOTE' ? '기출 오답으로 돌아가기' : '기출노트로 돌아가기'}
         </Button>
       </Card>
     );
@@ -287,9 +331,11 @@ export function ExamSessionPlayer({
 
         <TitleRow>
           <LevelBox>{`문제 ${current.problem_no ?? '-'}`}</LevelBox>
-          <Title>{current.question_text}</Title>
+          <Title>{current.section_title || '기출문제'}</Title>
           {latestAttempt?.result_status ? <HistoryBadge>{`최근 이력 ${latestAttempt.result_status}`}</HistoryBadge> : null}
         </TitleRow>
+
+        <QuestionBody>{formatExamText(current.question_text)}</QuestionBody>
 
         {!result ? (
           <>
@@ -308,9 +354,9 @@ export function ExamSessionPlayer({
               <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
                 SKIP
               </Button>
-              <Button tone="secondary" onClick={() => navigate('/exam-notes')} disabled={submitting}>
-                기출노트 종료
-              </Button>
+        <Button tone="secondary" onClick={() => navigate('/exam-notes')} disabled={submitting}>
+          기출노트 종료
+        </Button>
             </div>
           </>
         ) : null}
@@ -324,7 +370,7 @@ export function ExamSessionPlayer({
           details={details}
           metadata={gradingMetadata}
           onNext={() => void loadQuestion(current.id)}
-          onExit={() => navigate('/exam-notes')}
+          onExit={() => navigate(mode === 'WRONG_NOTE' ? '/wrong-notes/exam' : '/exam-notes')}
         />
       ) : null}
     </Stack>

@@ -1,6 +1,3 @@
-import chapter1Raw from '../../data/DoeActualExam_P1_C1.tsv?raw';
-import chapter2Raw from '../../data/DoeActualExam_P1_C2.tsv?raw';
-import chapter3Raw from '../../data/DoeActualExam_P1_C3.tsv?raw';
 import type { ExamQuestion } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
 
@@ -13,6 +10,12 @@ export interface ExamQuestionsPayload {
 }
 
 type RawRow = Record<string, string>;
+
+const examQuestionFiles = import.meta.glob('../../data/DoeActualExam_*.tsv', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
 function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
   return Promise.race<T>([
@@ -57,22 +60,27 @@ function parseTsv(content: string) {
 }
 
 function normalizeExamQuestion(row: any): ExamQuestion {
+  const partNo = Number(row.part_no ?? row.partNo ?? 0);
+  const chapterNo = Number(row.chapter_no ?? row.chapterNo ?? 0);
+  const sectionNo = toNullableNumber(String(row.section_no ?? row.sectionNo ?? ''));
+  const fallbackTitle = String(row.title ?? '').trim();
+
   return {
     id: String(row.id ?? ''),
-    part_no: Number(row.part_no ?? row.partNo ?? 0),
-    chapter_no: Number(row.chapter_no ?? row.chapterNo ?? 0),
-    section_no: toNullableNumber(String(row.section_no ?? row.sectionNo ?? '')),
+    part_no: partNo,
+    chapter_no: chapterNo,
+    section_no: sectionNo,
     problem_no: toNullableNumber(String(row.problem_no ?? row.problemNo ?? '')),
-    exam_year_raw: String(row.exam_year_raw ?? row.examYearRaw ?? '').trim() || null,
+    exam_year_raw: String(row.exam_year_raw ?? row.examYearRaw ?? row.examYear ?? '').trim() || null,
     exam_years: Array.isArray(row.exam_years)
       ? row.exam_years.map((item: unknown) => String(item).trim()).filter(Boolean)
-      : toArray(String(row.exam_years ?? row.examYears ?? '')),
-    source_page: String(row.source_page ?? row.sourcePage ?? '').trim() || null,
+      : toArray(String(row.exam_years ?? row.examYears ?? row.examYear ?? '')),
+    source_page: String(row.source_page ?? row.sourcePage ?? row.sourceRef ?? '').trim() || null,
     part_title: String(row.part_title ?? row.partTitle ?? '').trim(),
     chapter_title: String(row.chapter_title ?? row.chapterTitle ?? '').trim(),
-    section_title: String(row.section_title ?? row.sectionTitle ?? '').trim() || null,
-    question_text: String(row.question_text ?? row.questionText ?? '').trim(),
-    answer_text: String(row.answer_text ?? row.answerText ?? '').trim(),
+    section_title: String(row.section_title ?? row.sectionTitle ?? fallbackTitle).trim() || null,
+    question_text: String(row.question_text ?? row.questionText ?? row.question ?? '').trim(),
+    answer_text: String(row.answer_text ?? row.answerText ?? row.answer ?? '').trim(),
     explanation_text: String(row.explanation_text ?? row.explanationText ?? '').trim() || null,
     is_active: typeof row.is_active === 'boolean' ? row.is_active : true,
     check_status: String(row.check_status ?? row.checkStatus ?? 'DRAFT').trim() || 'DRAFT',
@@ -82,7 +90,7 @@ function normalizeExamQuestion(row: any): ExamQuestion {
   };
 }
 
-const localExamQuestions = [chapter1Raw, chapter2Raw, chapter3Raw]
+const localExamQuestions = Object.values(examQuestionFiles)
   .flatMap((raw) => parseTsv(raw))
   .map((row) => normalizeExamQuestion(row))
   .filter((row) => row.id && row.question_text && row.answer_text && row.is_active);
@@ -172,4 +180,17 @@ export function groupQuestionsByChapter(questions: ExamQuestion[]) {
       questionCount: items.length,
       questions: items,
     }));
+}
+
+export function getAvailableExamParts(questions: ExamQuestion[]) {
+  return [...new Set(questions.map((item) => item.part_no).filter((item) => Number.isInteger(item)))].sort((a, b) => a - b);
+}
+
+export function formatExamText(value: string) {
+  return String(value ?? '')
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
 }

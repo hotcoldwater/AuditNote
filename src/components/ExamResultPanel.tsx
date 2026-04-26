@@ -1,4 +1,5 @@
 import type { ExamGradingPayload, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
+import { formatExamText } from '../lib/examQuestions';
 import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -110,17 +111,17 @@ export function ExamResultPanel({
         <Section>
           <Label>{formatExamMeta(question)}</Label>
           <Label>모범답안</Label>
-          <Body>{details.modelAnswer || question.answer_text}</Body>
+          <Body>{formatExamText(details.modelAnswer || question.answer_text)}</Body>
         </Section>
         {details.correctPoints.length > 0 ? (
           <Section>
             <Label>맞게 쓴 부분</Label>
-            <Body>{details.correctPoints.map((item) => `- ${item}`).join('\n')}</Body>
+            <Body>{formatExamText(details.correctPoints.map((item) => `- ${item}`).join('\n'))}</Body>
           </Section>
         ) : null}
         <Section>
           <Label>내 답안</Label>
-          <Body>{userAnswer.trim() || '미응답'}</Body>
+          <Body>{formatExamText(userAnswer.trim() || '미응답')}</Body>
         </Section>
       </Stack>
 

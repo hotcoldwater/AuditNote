@@ -12,20 +12,30 @@ const FIELD_MAP: Record<string, string> = {
   sectionNo: 'section_no',
   problemNo: 'problem_no',
   examYearRaw: 'exam_year_raw',
+  examYear: 'exam_year_raw',
   examYears: 'exam_years',
+  examRound: 'exam_round',
+  examVariant: 'exam_variant',
   sourcePage: 'source_page',
+  sourceRef: 'source_page',
   partTitle: 'part_title',
   chapterTitle: 'chapter_title',
   sectionTitle: 'section_title',
   questionText: 'question_text',
+  question: 'question_text',
   answerText: 'answer_text',
+  answer: 'answer_text',
   explanationText: 'explanation_text',
   checkStatus: 'check_status',
+  contentType: 'content_type',
+  requiredKeywords: 'required_keywords',
+  optionalKeywords: 'optional_keywords',
+  questionNo: 'problem_no',
 };
 
 const NUMBER_FIELDS = new Set(['partNo', 'chapterNo', 'sectionNo', 'problemNo']);
-const ARRAY_FIELDS = new Set(['examYears']);
-const REQUIRED_COLUMNS = ['id', 'partNo', 'chapterNo', 'questionText', 'answerText'];
+const ARRAY_FIELDS = new Set(['examYears', 'requiredKeywords', 'optionalKeywords']);
+const REQUIRED_COLUMNS = ['id'];
 
 function usage() {
   console.log('Usage: npm run import:exams');
@@ -60,6 +70,15 @@ function parseTsv(content: string) {
     throw new Error(`필수 컬럼 누락: ${missingColumns.join(', ')}`);
   }
 
+  const hasQuestionColumn = headers.includes('questionText') || headers.includes('question');
+  const hasAnswerColumn = headers.includes('answerText') || headers.includes('answer');
+  const hasPartColumn = headers.includes('partNo');
+  const hasChapterColumn = headers.includes('chapterNo');
+
+  if (!hasQuestionColumn || !hasAnswerColumn || !hasPartColumn || !hasChapterColumn) {
+    throw new Error('기출 TSV 형식이 올바르지 않습니다. partNo/chapterNo/questionText(or question)/answerText(or answer)가 필요합니다.');
+  }
+
   const rows = lines.slice(1).map((line) => {
     const cells = line.split('\t');
     return headers.reduce<RawRow>((acc, header, index) => {
@@ -90,8 +109,16 @@ function validateAndTransform(rows: Array<{ source: string; row: RawRow }>) {
     const location = `${path.basename(source)}:${index + 2}`;
     const id = row.id?.trim() ?? '';
 
-    for (const column of REQUIRED_COLUMNS) {
-      if (!String(row[column] ?? '').trim()) {
+    const requiredFields = {
+      id: row.id,
+      partNo: row.partNo,
+      chapterNo: row.chapterNo,
+      questionText: row.questionText ?? row.question,
+      answerText: row.answerText ?? row.answer,
+    };
+
+    for (const [column, value] of Object.entries(requiredFields)) {
+      if (!String(value ?? '').trim()) {
         issues.push({ row: location, id: id || '-', message: `${column} 누락` });
         invalidIndexes.add(index);
       }
@@ -128,6 +155,12 @@ function validateAndTransform(rows: Array<{ source: string; row: RawRow }>) {
     });
 
     record.id = id;
+    record.part_title = String(record.part_title ?? '').trim();
+    record.chapter_title = String(record.chapter_title ?? '').trim();
+    record.section_title = String(record.section_title ?? row.title ?? '').trim() || null;
+    record.question_text = String(record.question_text ?? '').trim();
+    record.answer_text = String(record.answer_text ?? '').trim();
+    record.exam_year_raw = String(record.exam_year_raw ?? '').trim() || null;
     record.exam_years = Array.isArray(record.exam_years) ? record.exam_years : [];
     record.is_active = true;
     record.check_status = record.check_status ?? 'DRAFT';
