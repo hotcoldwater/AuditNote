@@ -157,6 +157,19 @@ function buildFallbackDetails(correctAnswer, userAnswer) {
   };
 }
 
+function normalizeAnswerImages(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => ({
+      dataUrl: typeof item?.dataUrl === 'string' ? item.dataUrl.trim() : '',
+      name: typeof item?.name === 'string' ? item.name.trim() : 'answer-image',
+    }))
+    .filter((item) => item.dataUrl.startsWith('data:image/'));
+}
+
 function normalizeDetails(details, correctAnswer) {
   return {
     score: clampScore(details?.score),
@@ -231,12 +244,13 @@ export async function onRequestPost(context) {
   const correctAnswer = typeof payload?.correctAnswer === 'string' ? payload.correctAnswer.trim() : '';
   const userAnswer = typeof payload?.userAnswer === 'string' ? payload.userAnswer.trim() : '';
   const explanationText = typeof payload?.explanationText === 'string' ? payload.explanationText.trim() : '';
+  const answerImages = normalizeAnswerImages(payload?.answerImages);
 
   if (!questionText || !correctAnswer) {
     return json({ error: '문제 또는 모범답안 원문이 없습니다.' }, { status: 400 });
   }
 
-  if (isSkippedAnswer(userAnswer)) {
+  if (isSkippedAnswer(userAnswer) && answerImages.length === 0) {
     const details = {
       score: 0,
       maxScore: 100,
@@ -306,8 +320,19 @@ export async function onRequestPost(context) {
     `문제 원문: ${questionText}`,
     `모범답안 원문: ${correctAnswer}`,
     `참고 해설: ${explanationText || '없음'}`,
-    `사용자 답안: ${userAnswer}`,
+    `사용자 텍스트 답안: ${userAnswer || '없음'}`,
+    userAnswer ? '텍스트 답안이 있으므로 텍스트를 기준으로 채점하고, 이미지가 있더라도 보조적으로만 참고한다.' : '텍스트 답안이 없으면 첨부된 손글씨 이미지에서 답안을 읽어 채점한다.',
   ].join('\n\n');
+
+  const inputContent = [{ type: 'input_text', text: prompt }];
+  if (answerImages.length > 0) {
+    for (const image of answerImages) {
+      inputContent.push({
+        type: 'input_image',
+        image_url: image.dataUrl,
+      });
+    }
+  }
 
   let openaiResponse;
   try {
@@ -340,7 +365,12 @@ export async function onRequestPost(context) {
           'modelAnswer는 입력으로 받은 모범답안 원문을 그대로 넣는다.',
           '반드시 JSON 형식으로만 응답한다.',
         ].join(' '),
-        input: prompt,
+        input: [
+          {
+            role: 'user',
+            content: inputContent,
+          },
+        ],
         text: {
           format: {
             type: 'json_schema',

@@ -1,4 +1,4 @@
-import type { ExamGradingPayload, GradingMetadata, ScoringResult } from '../types';
+import type { AnswerImage, ExamGradingPayload, GradingMetadata, ScoringResult } from '../types';
 import { deriveResultStatus, isSkippedAnswer } from './scoring';
 import { isSupabaseConfigured, supabase } from './supabase';
 
@@ -10,6 +10,7 @@ interface GradeExamInput {
   correctAnswer: string;
   explanationText?: string | null;
   userAnswer: string;
+  answerImages?: AnswerImage[];
 }
 
 interface GradeExamApiResponse {
@@ -159,7 +160,7 @@ export async function gradeExamAnswer(input: GradeExamInput): Promise<{
   details: ExamGradingPayload;
   metadata: GradingMetadata;
 }> {
-  if (isSkippedAnswer(input.userAnswer)) {
+  if (isSkippedAnswer(input.userAnswer) && (!input.answerImages || input.answerImages.length === 0)) {
     return buildSkippedResponse(input.correctAnswer);
   }
 

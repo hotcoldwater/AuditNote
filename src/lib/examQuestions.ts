@@ -1,4 +1,4 @@
-import type { ExamQuestion } from '../types';
+import type { ExamQuestion, ExamYearOption } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { formatDetailedTextForDisplay } from './standardDisplay';
 
@@ -185,6 +185,32 @@ export function groupQuestionsByChapter(questions: ExamQuestion[]) {
 
 export function getAvailableExamParts(questions: ExamQuestion[]) {
   return [...new Set(questions.map((item) => item.part_no).filter((item) => Number.isInteger(item)))].sort((a, b) => a - b);
+}
+
+export function getAvailableExamYears(questions: ExamQuestion[]) {
+  const yearMap = new Map<string, number>();
+
+  for (const question of questions) {
+    for (const year of question.exam_years) {
+      const normalizedYear = String(year).trim();
+      if (!normalizedYear) {
+        continue;
+      }
+      yearMap.set(normalizedYear, (yearMap.get(normalizedYear) ?? 0) + 1);
+    }
+  }
+
+  return [...yearMap.entries()]
+    .map(([year, questionCount]) => ({ year, questionCount }) satisfies ExamYearOption)
+    .sort((a, b) => Number(b.year) - Number(a.year));
+}
+
+export function getExamQuestionsByYear(questions: ExamQuestion[], year: string) {
+  const normalizedYear = String(year).trim();
+  if (!normalizedYear) {
+    return [];
+  }
+  return sortQuestions(questions.filter((question) => question.exam_years.includes(normalizedYear)));
 }
 
 export function formatExamText(value: string) {

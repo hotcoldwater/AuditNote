@@ -5,7 +5,7 @@ import { Card } from '../components/Card';
 import { Layout } from '../components/Layout';
 import { loadLatestExamAttemptMap } from '../lib/examAttempts';
 import { useAuth } from '../lib/auth';
-import { fetchExamQuestions, formatExamText, getAvailableExamParts, groupQuestionsByChapter } from '../lib/examQuestions';
+import { fetchExamQuestions, getAvailableExamParts, getAvailableExamYears, groupQuestionsByChapter } from '../lib/examQuestions';
 import { styled } from '../styles/stitches.config';
 import type { ExamAttempt, ExamQuestion } from '../types';
 
@@ -220,7 +220,7 @@ const Segment = styled('div', {
   height: '100%',
 });
 
-type SetupMode = 'RANDOM' | 'SELECT' | null;
+type SetupMode = 'RANDOM' | 'SELECT' | 'EXAM' | null;
 
 type ChapterGroup = ReturnType<typeof groupQuestionsByChapter>[number];
 type ExamProgressItem = {
@@ -328,6 +328,7 @@ export function ExamNotesPage() {
     () => (selectedPartNo ? groupQuestionsByChapter(questions.filter((item) => item.part_no === selectedPartNo)) : []),
     [questions, selectedPartNo],
   );
+  const examYears = useMemo(() => getAvailableExamYears(questions), [questions]);
   const currentChapter = useMemo<ChapterGroup | null>(
     () => chapterGroups.find((item) => item.chapterNo === selectedChapterNo) ?? null,
     [chapterGroups, selectedChapterNo],
@@ -368,6 +369,9 @@ export function ExamNotesPage() {
             </ChoiceCard>
             <ChoiceCard onClick={() => setSetupMode('SELECT')}>
               <ButtonLabel>SELECT</ButtonLabel>
+            </ChoiceCard>
+            <ChoiceCard onClick={() => setSetupMode('EXAM')}>
+              <ButtonLabel>EXAM</ButtonLabel>
             </ChoiceCard>
           </ChoiceGrid>
         ) : null}
@@ -412,6 +416,28 @@ export function ExamNotesPage() {
                 <ButtonLabel>전체</ButtonLabel>
                 {!loading ? <ButtonMeta>{`${questions.length}문제`}</ButtonMeta> : null}
               </ChoiceCard>
+            </ChoiceGrid>
+          </Stack>
+        ) : null}
+
+        {setupMode === 'EXAM' ? (
+          <Stack>
+            <HeaderCard>
+              <HeaderTitle>EXAM</HeaderTitle>
+              <ActionRow>
+                <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
+                  방식 다시 선택
+                </Button>
+              </ActionRow>
+            </HeaderCard>
+
+            <ChoiceGrid>
+              {examYears.map((item) => (
+                <ChoiceCard key={item.year} onClick={() => navigate(`/exam-notes/play?mode=exam&year=${item.year}`)}>
+                  <ButtonLabel>{item.year}</ButtonLabel>
+                  <ButtonMeta>{`${item.questionCount}문제`}</ButtonMeta>
+                </ChoiceCard>
+              ))}
             </ChoiceGrid>
           </Stack>
         ) : null}

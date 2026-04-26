@@ -5,6 +5,13 @@ export type IssueReportType = 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADI
 
 export type StudyMode = 'RANDOM' | 'PART' | 'SELECT' | 'WRONG_NOTE';
 
+export interface AnswerImage {
+  id: string;
+  name: string;
+  dataUrl: string;
+  mimeType: string;
+}
+
 export type LevelWeightMap = Record<number, number>;
 
 export interface Standard {
@@ -230,4 +237,25 @@ export interface ExamGradingPayload {
   wrongPoints: string[];
   advice: string;
   modelAnswer: string;
+}
+
+export interface ExamYearOption {
+  year: string;
+  questionCount: number;
+}
+
+export interface ExamPaperAnswerDraft {
+  questionId: string;
+  userAnswer: string;
+  answerImages: AnswerImage[];
+}
+
+export interface ExamPaperQuestionResult {
+  questionId: string;
+  index: number;
+  userAnswer: string;
+  answerImages: AnswerImage[];
+  scoring: ScoringResult;
+  details: ExamGradingPayload;
+  metadata: GradingMetadata | null;
 }

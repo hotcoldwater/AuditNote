@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ExamPaperPlayer } from '../components/ExamPaperPlayer';
 import { ExamSessionPlayer } from '../components/ExamSessionPlayer';
 import { Layout } from '../components/Layout';
 
@@ -19,6 +20,15 @@ export function ExamPlayPage() {
   const chapterNo = parseOptionalNumber(searchParams.get('chapterNo'));
   const questionId = searchParams.get('questionId');
   const excludeSolved = searchParams.get('excludeSolved') === '1';
+  const year = searchParams.get('year');
+
+  if (mode === 'exam' && year) {
+    return (
+      <Layout title="기출노트">
+        <ExamPaperPlayer year={year} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="기출노트">

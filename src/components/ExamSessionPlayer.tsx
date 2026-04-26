@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { summarizeAnswerInput } from '../lib/answerImages';
 import { gradeExamAnswer } from '../lib/examGrading';
 import { listLatestExamWrongAttempts, loadLatestExamAttemptMap, recordExamAttempt } from '../lib/examAttempts';
 import { fetchExamQuestions, formatExamText } from '../lib/examQuestions';
 import { useAuth } from '../lib/auth';
-import type { ExamAttempt, ExamGradingPayload, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
+import type { AnswerImage, ExamAttempt, ExamGradingPayload, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
+import { AnswerComposer } from './AnswerComposer';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ExamResultPanel } from './ExamResultPanel';
 import { RichTextContent } from './RichTextContent';
-import { Textarea } from './Textarea';
 import { styled } from '../styles/stitches.config';
 
 const Stack = styled('div', {
@@ -191,6 +192,7 @@ export function ExamSessionPlayer({
   const [gradingMetadata, setGradingMetadata] = useState<GradingMetadata | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [latestAttempt, setLatestAttempt] = useState<ExamAttempt | null>(null);
+  const [answerImages, setAnswerImages] = useState<AnswerImage[]>([]);
 
   const locationLines = useMemo(() => (current ? buildLocationLines(current) : []), [current]);
 
@@ -205,6 +207,7 @@ export function ExamSessionPlayer({
     setDetails(null);
     setGradingMetadata(null);
     setAnswer('');
+    setAnswerImages([]);
     setSubmitNotice(undefined);
     setLatestAttempt(null);
 
@@ -250,7 +253,7 @@ export function ExamSessionPlayer({
     void loadQuestion();
   }, [authLoading, chapterNo, mode, partNo, preferredQuestionId, user?.id]);
 
-  async function submitAnswer(submittedAnswer: string) {
+  async function submitAnswer(submittedAnswer: string, submittedImages: AnswerImage[]) {
     if (!user || !current || submitting) {
       return;
     }
@@ -264,9 +267,11 @@ export function ExamSessionPlayer({
         correctAnswer: current.answer_text,
         explanationText: current.explanation_text,
         userAnswer: submittedAnswer,
+        answerImages: submittedImages,
       });
 
-      const outcome = await recordExamAttempt(user.id, current, submittedAnswer, payload.result, payload.metadata);
+      const normalizedAnswer = summarizeAnswerInput(submittedAnswer, submittedImages);
+      const outcome = await recordExamAttempt(user.id, current, normalizedAnswer, payload.result, payload.metadata);
       setResult(payload.result);
       setDetails(payload.details);
       setGradingMetadata(payload.metadata);
@@ -276,7 +281,7 @@ export function ExamSessionPlayer({
           id: outcome.attempt?.id ?? 'local',
           user_id: user.id,
           question_id: current.id,
-          user_answer: submittedAnswer,
+          user_answer: normalizedAnswer,
           score: payload.result.score,
           result_status: payload.result.resultStatus,
           grading_method: payload.metadata.gradingMethod,
@@ -299,7 +304,8 @@ export function ExamSessionPlayer({
     }
 
     setAnswer('');
-    await submitAnswer('');
+    setAnswerImages([]);
+    await submitAnswer('', []);
   }
 
   if (authLoading) {
@@ -352,16 +358,17 @@ export function ExamSessionPlayer({
 
         {!result ? (
           <>
-            <Textarea
-              id="exam-answer"
-              placeholder="답안을 작성하세요."
-              value={answer}
-              onChange={(event) => setAnswer(event.target.value)}
+            <AnswerComposer
+              answer={answer}
+              answerImages={answerImages}
+              onAnswerChange={setAnswer}
+              onImagesChange={setAnswerImages}
               disabled={submitting}
+              placeholder="답안을 작성하세요."
             />
 
             <div style={{ display: 'grid', gap: 12 }}>
-              <Button onClick={() => void submitAnswer(answer)} disabled={submitting}>
+              <Button onClick={() => void submitAnswer(answer, answerImages)} disabled={submitting}>
                 {submitting ? 'AI채점 중...' : 'AI채점'}
               </Button>
               <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
@@ -378,7 +385,7 @@ export function ExamSessionPlayer({
       {result && details ? (
         <ExamResultPanel
           question={current}
-          userAnswer={answer}
+          userAnswer={summarizeAnswerInput(answer, answerImages)}
           result={result}
           details={details}
           metadata={gradingMetadata}

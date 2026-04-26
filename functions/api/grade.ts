@@ -295,6 +295,19 @@ function detectCriticalWrongConcepts(userAnswer, wrongConcepts) {
   );
 }
 
+function normalizeAnswerImages(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => ({
+      dataUrl: typeof item?.dataUrl === 'string' ? item.dataUrl.trim() : '',
+      name: typeof item?.name === 'string' ? item.name.trim() : 'answer-image',
+    }))
+    .filter((item) => item.dataUrl.startsWith('data:image/'));
+}
+
 function computeRuleScore(correctAnswer, userAnswer, requiredKeywords, optionalKeywords, wrongConcepts) {
   const normalizedRequired = normalizeList(requiredKeywords);
   const normalizedOptional = normalizeList(optionalKeywords);
@@ -421,6 +434,7 @@ export async function onRequestPost(context) {
   const title = typeof payload?.title === 'string' ? payload.title.trim() : '';
   const correctAnswer = typeof payload?.correctAnswer === 'string' ? payload.correctAnswer.trim() : '';
   const userAnswer = typeof payload?.userAnswer === 'string' ? payload.userAnswer.trim() : '';
+  const answerImages = normalizeAnswerImages(payload?.answerImages);
   const requiredKeywords = payload?.requiredKeywords;
   const optionalKeywords = payload?.optionalKeywords;
   const wrongConcepts = payload?.wrongConcepts;
@@ -429,7 +443,7 @@ export async function onRequestPost(context) {
     return json({ error: '정답 원문이 없습니다.' }, { status: 400 });
   }
 
-  if (isSkippedAnswer(userAnswer)) {
+  if (isSkippedAnswer(userAnswer) && answerImages.length === 0) {
     const result = normalizeResult({
       score: 0,
       reason: '잘한 부분은 제출된 답안이 없어 확인할 수 없고, 보완할 부분은 핵심 문장을 직접 작성해 봐야 한다는 점입니다.',
@@ -470,11 +484,22 @@ export async function onRequestPost(context) {
   const prompt = [
     `기준서 제목: ${title || '제목 없음'}`,
     `정답 원문: ${correctAnswer}`,
-    `사용자 답안: ${userAnswer}`,
+    `사용자 텍스트 답안: ${userAnswer || '없음'}`,
     `필수 키워드: ${normalizeList(requiredKeywords).join(', ') || '없음'}`,
     `보조 키워드: ${normalizeList(optionalKeywords).join(', ') || '없음'}`,
     `오개념 후보: ${normalizeList(wrongConcepts).join(', ') || '없음'}`,
+    userAnswer ? '텍스트 답안이 있으면 텍스트를 기준으로 채점한다.' : '텍스트 답안이 없으면 첨부된 손글씨 이미지에서 답안을 읽어 채점한다.',
   ].join('\n\n');
+
+  const inputContent = [{ type: 'input_text', text: prompt }];
+  if (answerImages.length > 0) {
+    for (const image of answerImages) {
+      inputContent.push({
+        type: 'input_image',
+        image_url: image.dataUrl,
+      });
+    }
+  }
 
   let openaiResponse;
   try {
@@ -504,7 +529,12 @@ export async function onRequestPost(context) {
           '점수 기준은 90~100 EXCELLENT, 75~89 CORRECT, 60~74 REVIEW, 1~59 WRONG, 0 SKIPPED 이다.',
           '반환 JSON은 score, resultStatus, reason, shouldRecommendReview, shouldAddWrongNote 만 포함한다.',
         ].join(' '),
-        input: prompt,
+        input: [
+          {
+            role: 'user',
+            content: inputContent,
+          },
+        ],
         text: {
           format: {
             type: 'json_schema',

@@ -1,4 +1,4 @@
-import type { GradingMetadata, RuleScoringResult, ScoringResult } from '../types';
+import type { AnswerImage, GradingMetadata, RuleScoringResult, ScoringResult } from '../types';
 import { deriveResultStatus, isSkippedAnswer, normalizeScoringResult } from './scoring';
 import { isSupabaseConfigured, supabase } from './supabase';
 
@@ -16,6 +16,7 @@ interface GradeAnswerInput {
   title: string;
   correctAnswer: string;
   userAnswer: string;
+  answerImages?: AnswerImage[];
   requiredKeywords?: string[] | string | null;
   optionalKeywords?: string[] | string | null;
   wrongConcepts?: string[] | string | null;
@@ -425,7 +426,7 @@ export async function gradeAnswer(input: GradeAnswerInput): Promise<{
   result: ScoringResult;
   metadata: GradingMetadata;
 }> {
-  if (isSkippedAnswer(input.userAnswer)) {
+  if (isSkippedAnswer(input.userAnswer) && (!input.answerImages || input.answerImages.length === 0)) {
     return buildSkippedResult();
   }
 

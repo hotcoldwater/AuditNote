@@ -5,14 +5,15 @@ import { recordStudyOutcome, loadUserStandardStatsMap } from '../lib/attempts';
 import { useAuth } from '../lib/auth';
 import { submitIssueReport } from '../lib/issueReports';
 import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/questionPicker';
+import { summarizeAnswerInput } from '../lib/answerImages';
 import { getStandardLocationLines } from '../lib/standardDisplay';
 import { fetchActiveStandards, sortStandardsForStudySequence } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
-import type { GradingMetadata, ScoringResult, Standard, StudyMode, UserStandardStats } from '../types';
+import type { AnswerImage, GradingMetadata, ScoringResult, Standard, StudyMode, UserStandardStats } from '../types';
+import { AnswerComposer } from './AnswerComposer';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResultPanel } from './ResultPanel';
-import { Textarea } from './Textarea';
 import { styled } from '../styles/stitches.config';
 
 const Stack = styled('div', {
@@ -143,6 +144,7 @@ export function SessionPlayer({
   const [gradingMetadata, setGradingMetadata] = useState<GradingMetadata | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [currentHistory, setCurrentHistory] = useState<UserStandardStats | null>(null);
+  const [answerImages, setAnswerImages] = useState<AnswerImage[]>([]);
 
   function pickSequentialStandard(
     standards: Standard[],
@@ -180,6 +182,7 @@ export function SessionPlayer({
     setResult(null);
     setGradingMetadata(null);
     setAnswer('');
+    setAnswerImages([]);
     setSubmitNotice(undefined);
     setCurrentHistory(null);
 
@@ -196,6 +199,7 @@ export function SessionPlayer({
         setCurrent(nextStandard);
         setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
+        setAnswerImages([]);
       } else if (mode === 'SELECT') {
         const standardsPayload = await fetchActiveStandards(partNo);
         const chapterStandards = sortStandardsForStudySequence(
@@ -206,6 +210,7 @@ export function SessionPlayer({
         setCurrent(nextStandard);
         setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
+        setAnswerImages([]);
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
         let candidates = examOnly
@@ -222,11 +227,13 @@ export function SessionPlayer({
         setCurrent(nextStandard);
         setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
+        setAnswerImages([]);
       }
     } catch {
       setCurrent(null);
       setCurrentHistory(null);
       setAnswer('');
+      setAnswerImages([]);
       setNotice('문제 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(false);
@@ -244,7 +251,7 @@ export function SessionPlayer({
     return <Card>사용자 정보를 확인하는 중...</Card>;
   }
 
-  async function submitAnswer(submittedAnswer: string) {
+  async function submitAnswer(submittedAnswer: string, submittedImages: AnswerImage[]) {
     if (!user || !current || submitting) {
       return;
     }
@@ -257,6 +264,7 @@ export function SessionPlayer({
         title: current.title,
         correctAnswer: current.answer,
         userAnswer: submittedAnswer,
+        answerImages: submittedImages,
         requiredKeywords: current.required_keywords,
         optionalKeywords: current.optional_keywords,
         wrongConcepts: current.wrong_concepts,
@@ -279,7 +287,8 @@ export function SessionPlayer({
     }
 
     setAnswer('');
-    await submitAnswer('');
+    setAnswerImages([]);
+    await submitAnswer('', []);
   }
 
   async function handleManualWrongNote() {
@@ -340,18 +349,19 @@ export function SessionPlayer({
         </MetaSection>
 
         <div>
-          <Textarea
-            id="answer"
-            placeholder="답안을 작성하세요."
-            value={answer}
-            onChange={(event) => setAnswer(event.target.value)}
+          <AnswerComposer
+            answer={answer}
+            answerImages={answerImages}
+            onAnswerChange={setAnswer}
+            onImagesChange={setAnswerImages}
             disabled={Boolean(result) || submitting}
+            placeholder="답안을 작성하세요."
           />
         </div>
 
         {!result ? (
           <div style={{ display: 'grid', gap: 12 }}>
-            <Button onClick={() => void submitAnswer(answer)} disabled={!current || submitting}>
+            <Button onClick={() => void submitAnswer(answer, answerImages)} disabled={!current || submitting}>
               {submitting ? 'AI채점 중...' : 'AI채점'}
             </Button>
             <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
@@ -367,7 +377,7 @@ export function SessionPlayer({
       {result ? (
         <ResultPanel
           standard={current}
-          userAnswer={answer}
+          userAnswer={summarizeAnswerInput(answer, answerImages)}
           result={result}
           metadata={gradingMetadata}
           onAddWrongNote={handleManualWrongNote}
