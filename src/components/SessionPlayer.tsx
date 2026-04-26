@@ -8,7 +8,7 @@ import { pickRandomWrongStandard, pickWeightedRandomStandard } from '../lib/ques
 import { getStandardLocationLines } from '../lib/standardDisplay';
 import { fetchActiveStandards, sortStandardsForStudySequence } from '../lib/standards';
 import { manuallyAddWrongNote, listWrongNotes } from '../lib/wrongNotes';
-import type { GradingMetadata, ScoringResult, Standard, StudyMode } from '../types';
+import type { GradingMetadata, ScoringResult, Standard, StudyMode, UserStandardStats } from '../types';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResultPanel } from './ResultPanel';
@@ -91,6 +91,20 @@ const Notice = styled('div', {
   lineHeight: 1.6,
 });
 
+const HistoryBadge = styled('span', {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '30px',
+  padding: '0 10px',
+  border: '1px solid $borderSoft',
+  backgroundColor: '$surface',
+  color: '$mutedText',
+  fontSize: '$2',
+  fontWeight: 700,
+  letterSpacing: '0.03em',
+});
+
 const QuestionCard = styled(Card, {
   display: 'grid',
   gap: '$6',
@@ -107,6 +121,7 @@ export function SessionPlayer({
   chapterNo,
   preferredStandardId,
   examOnly,
+  excludeSolved,
   wrongStatuses,
 }: {
   mode: StudyMode;
@@ -114,6 +129,7 @@ export function SessionPlayer({
   chapterNo?: number | null;
   preferredStandardId?: string | null;
   examOnly?: boolean;
+  excludeSolved?: boolean;
   wrongStatuses?: Array<'WRONG' | 'REVIEW'>;
 }) {
   const { user, loading: authLoading } = useAuth();
@@ -126,6 +142,7 @@ export function SessionPlayer({
   const [result, setResult] = useState<ScoringResult | null>(null);
   const [gradingMetadata, setGradingMetadata] = useState<GradingMetadata | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [currentHistory, setCurrentHistory] = useState<UserStandardStats | null>(null);
 
   function pickSequentialStandard(
     standards: Standard[],
@@ -164,6 +181,7 @@ export function SessionPlayer({
     setGradingMetadata(null);
     setAnswer('');
     setSubmitNotice(undefined);
+    setCurrentHistory(null);
 
     try {
       const statsMap = await loadUserStandardStatsMap(user.id);
@@ -176,6 +194,7 @@ export function SessionPlayer({
         const nextStandard = pickRandomWrongStandard(candidates, preferredStandardId, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
+        setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
       } else if (mode === 'SELECT') {
         const standardsPayload = await fetchActiveStandards(partNo);
@@ -185,19 +204,28 @@ export function SessionPlayer({
         const nextStandard = pickSequentialStandard(chapterStandards, preferredStandardId, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
+        setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
       } else {
         const standardsPayload = await fetchActiveStandards(mode === 'PART' ? partNo : undefined);
-        const candidates = examOnly
+        let candidates = examOnly
           ? standardsPayload.standards.filter((item) => Array.isArray(item.exam_years) && item.exam_years.length > 0)
           : standardsPayload.standards;
+        if (excludeSolved) {
+          candidates = candidates.filter((item) => {
+            const stat = statsMap.get(item.id);
+            return stat?.last_result_status !== 'CORRECT' && stat?.last_result_status !== 'EXCELLENT';
+          });
+        }
         const nextStandard = pickWeightedRandomStandard(candidates, statsMap, excludeStandardId);
         setNotice(standardsPayload.notice);
         setCurrent(nextStandard);
+        setCurrentHistory(nextStandard ? statsMap.get(nextStandard.id) ?? null : null);
         setAnswer('');
       }
     } catch {
       setCurrent(null);
+      setCurrentHistory(null);
       setAnswer('');
       setNotice('문제 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
@@ -210,7 +238,7 @@ export function SessionPlayer({
       return;
     }
     void loadQuestion();
-  }, [authLoading, chapterNo, examOnly, mode, partNo, preferredStandardId, user?.id]);
+  }, [authLoading, chapterNo, examOnly, excludeSolved, mode, partNo, preferredStandardId, user?.id]);
 
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;
@@ -307,6 +335,9 @@ export function SessionPlayer({
           <TitleRow>
             <LevelBox>{`Lv${current.level}`}</LevelBox>
             <Title>{current.title}</Title>
+            {currentHistory?.last_result_status ? (
+              <HistoryBadge>{`최근 이력 ${currentHistory.last_result_status}`}</HistoryBadge>
+            ) : null}
           </TitleRow>
         </MetaSection>
 

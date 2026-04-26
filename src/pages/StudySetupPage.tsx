@@ -4,9 +4,11 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { getOrderedStudyParts, getStudyPartTitle } from '../lib/partMeta';
 import { getStandardLocationLines } from '../lib/standardDisplay';
+import { loadUserStandardStatsMap } from '../lib/attempts';
+import { useAuth } from '../lib/auth';
 import { fetchActiveStandards, getAvailableParts, sortStandardsForStudySequence } from '../lib/standards';
 import { styled } from '../styles/stitches.config';
-import type { Standard } from '../types';
+import type { Standard, UserStandardStats } from '../types';
 import { Layout } from '../components/Layout';
 
 const Stack = styled('div', {
@@ -165,6 +167,14 @@ const Chip = styled('span', {
   fontWeight: 700,
 });
 
+const HistoryText = styled('div', {
+  color: '$danger',
+  fontSize: '$1',
+  lineHeight: 1.5,
+  fontWeight: 700,
+  letterSpacing: '0.02em',
+});
+
 type SetupMode = 'RANDOM' | 'SELECT' | null;
 
 type ChapterGroup = {
@@ -203,6 +213,7 @@ function buildChapterGroups(standards: Standard[], partNo: number) {
 
 export function StudySetupPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [standards, setStandards] = useState<Standard[]>([]);
   const [parts, setParts] = useState<number[]>(getOrderedStudyParts());
   const [notice, setNotice] = useState<string | undefined>();
@@ -210,6 +221,8 @@ export function StudySetupPage() {
   const [selectedPartNo, setSelectedPartNo] = useState<number | null>(null);
   const [selectedChapterNo, setSelectedChapterNo] = useState<number | null>(null);
   const [examOnly, setExamOnly] = useState(false);
+  const [excludeSolved, setExcludeSolved] = useState(false);
+  const [statsMap, setStatsMap] = useState<Map<string, UserStandardStats>>(new Map());
 
   useEffect(() => {
     fetchActiveStandards().then((payload) => {
@@ -219,6 +232,21 @@ export function StudySetupPage() {
       setNotice(payload.notice);
     });
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setStatsMap(new Map());
+      return;
+    }
+
+    loadUserStandardStatsMap(user.id)
+      .then((nextMap) => {
+        setStatsMap(nextMap);
+      })
+      .catch(() => {
+        setStatsMap(new Map());
+      });
+  }, [user?.id]);
 
   const chapterGroups = useMemo(
     () => (selectedPartNo ? buildChapterGroups(standards, selectedPartNo) : []),
@@ -264,6 +292,14 @@ export function StudySetupPage() {
                   />
                   기출만
                 </FilterLabel>
+                <FilterLabel>
+                  <FilterCheckbox
+                    type="checkbox"
+                    checked={excludeSolved}
+                    onChange={(event) => setExcludeSolved(event.target.checked)}
+                  />
+                  맞춘 항목 제외
+                </FilterLabel>
               </ActionRow>
             </HeaderCard>
 
@@ -271,7 +307,11 @@ export function StudySetupPage() {
               {getOrderedStudyParts().map((partNo) => (
                 <StudyButton
                   key={partNo}
-                  onClick={() => navigate(`/study/play?mode=part&partNo=${partNo}${examOnly ? '&examOnly=1' : ''}`)}
+                  onClick={() =>
+                    navigate(
+                      `/study/play?mode=part&partNo=${partNo}${examOnly ? '&examOnly=1' : ''}${excludeSolved ? '&excludeSolved=1' : ''}`,
+                    )
+                  }
                   disabled={!parts.includes(partNo)}
                 >
                   <ButtonLabel>{partNo}편</ButtonLabel>
@@ -279,7 +319,11 @@ export function StudySetupPage() {
                 </StudyButton>
               ))}
 
-              <StudyButton onClick={() => navigate(`/study/play?mode=random${examOnly ? '&examOnly=1' : ''}`)}>
+              <StudyButton
+                onClick={() =>
+                  navigate(`/study/play?mode=random${examOnly ? '&examOnly=1' : ''}${excludeSolved ? '&excludeSolved=1' : ''}`)
+                }
+              >
                 <ButtonLabel>전체</ButtonLabel>
                 <ButtonTitle>전체 범위 랜덤</ButtonTitle>
               </StudyButton>
@@ -352,6 +396,7 @@ export function StudySetupPage() {
                 <ListGrid>
                   {currentChapter.standards.map((standard, index) => {
                     const locationLines = getStandardLocationLines(standard);
+                    const lastResultStatus = statsMap.get(standard.id)?.last_result_status;
                     return (
                       <ListButton
                         key={standard.id}
@@ -366,6 +411,7 @@ export function StudySetupPage() {
                           <Chip>{`Lv${standard.level}`}</Chip>
                         </RowTop>
                         <ButtonTitle>{locationLines[2] ?? currentChapter.label}</ButtonTitle>
+                        {lastResultStatus ? <HistoryText>{`최근 이력 ${lastResultStatus}`}</HistoryText> : null}
                       </ListButton>
                     );
                   })}
