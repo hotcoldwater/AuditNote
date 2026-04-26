@@ -15,20 +15,6 @@ const Stack = styled('div', {
   gap: '$4',
 });
 
-const HeroCard = styled(Card, {
-  display: 'grid',
-  gap: '$2',
-  backgroundColor: '$panel',
-});
-
-const HeroTitle = styled('h2', {
-  margin: 0,
-  fontFamily: '$heading',
-  fontSize: '$6',
-  lineHeight: 1.04,
-  color: '$primary',
-});
-
 const Notice = styled('div', {
   fontSize: '$2',
   color: '$warning',
@@ -202,10 +188,11 @@ export function HomePage() {
   return (
     <Layout title="학습노트">
       <Stack>
-        <HeroCard>
-          <HeroTitle>{loading ? '...' : user?.nickname ?? '사용자'}</HeroTitle>
-          {notice ? <Notice>{notice}</Notice> : null}
-        </HeroCard>
+        {notice ? (
+          <Card>
+            <Notice>{notice}</Notice>
+          </Card>
+        ) : null}
 
         <ProgressCard>
           <ProgressList>

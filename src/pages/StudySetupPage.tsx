@@ -34,7 +34,6 @@ const StudyButton = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
-  gap: '$2',
   minHeight: '108px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -64,12 +63,6 @@ const ButtonLabel = styled('div', {
   lineHeight: 1.3,
 });
 
-const ButtonTitle = styled('div', {
-  fontSize: '$2',
-  color: '$mutedText',
-  lineHeight: 1.6,
-});
-
 const HeaderCard = styled(Card, {
   display: 'grid',
   gap: '$3',
@@ -80,12 +73,6 @@ const HeaderTitle = styled('div', {
   fontSize: '$5',
   lineHeight: 1.15,
   color: '$primary',
-});
-
-const HeaderBody = styled('div', {
-  color: '$mutedText',
-  fontSize: '$2',
-  lineHeight: 1.7,
 });
 
 const ActionRow = styled('div', {
@@ -266,11 +253,9 @@ export function StudySetupPage() {
           <ChoiceGrid>
             <StudyButton onClick={() => setSetupMode('RANDOM')}>
               <ButtonLabel>RANDOM</ButtonLabel>
-              <ButtonTitle>선택한 범위 안에서 랜덤으로 출제합니다.</ButtonTitle>
             </StudyButton>
             <StudyButton onClick={() => setSetupMode('SELECT')}>
               <ButtonLabel>SELECT</ButtonLabel>
-              <ButtonTitle>편과 장을 고른 뒤 기준서를 순서대로 직접 선택합니다.</ButtonTitle>
             </StudyButton>
           </ChoiceGrid>
         ) : null}
@@ -279,7 +264,6 @@ export function StudySetupPage() {
           <Stack>
             <HeaderCard>
               <HeaderTitle>RANDOM</HeaderTitle>
-              <HeaderBody>범위를 고르면 그 안에서 랜덤으로 출제합니다.</HeaderBody>
               <ActionRow>
                 <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
                   방식 다시 선택
@@ -315,7 +299,6 @@ export function StudySetupPage() {
                   disabled={!parts.includes(partNo)}
                 >
                   <ButtonLabel>{partNo}편</ButtonLabel>
-                  <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
                 </StudyButton>
               ))}
 
@@ -325,7 +308,6 @@ export function StudySetupPage() {
                 }
               >
                 <ButtonLabel>전체</ButtonLabel>
-                <ButtonTitle>전체 범위 랜덤</ButtonTitle>
               </StudyButton>
             </ChoiceGrid>
           </Stack>
@@ -335,7 +317,6 @@ export function StudySetupPage() {
           <Stack>
             <HeaderCard>
               <HeaderTitle>SELECT</HeaderTitle>
-              <HeaderBody>편을 고르고, 장을 고른 뒤, 그 장의 기준서를 순서대로 선택해서 풉니다.</HeaderBody>
               <ActionRow>
                 {selectedChapterNo !== null ? (
                   <Button
@@ -373,7 +354,6 @@ export function StudySetupPage() {
                     disabled={!parts.includes(partNo)}
                   >
                     <ButtonLabel>{partNo}편</ButtonLabel>
-                    <ButtonTitle>{getStudyPartTitle(partNo)}</ButtonTitle>
                   </StudyButton>
                 ))}
               </ChoiceGrid>
@@ -384,7 +364,6 @@ export function StudySetupPage() {
                 {chapterGroups.map((chapter) => (
                   <StudyButton key={chapter.chapterNo} onClick={() => setSelectedChapterNo(chapter.chapterNo)}>
                     <ButtonLabel>{chapter.label}</ButtonLabel>
-                    <ButtonTitle>{`${chapter.standards.length}개 기준서`}</ButtonTitle>
                   </StudyButton>
                 ))}
               </ChoiceGrid>
@@ -392,10 +371,9 @@ export function StudySetupPage() {
 
             {selectedPartNo !== null && currentChapter ? (
               <ListCard>
-                <HeaderBody>{`${selectedPartNo}편 · ${currentChapter.label}`}</HeaderBody>
+                <div style={{ color: '#6f7d90', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.label}`}</div>
                 <ListGrid>
                   {currentChapter.standards.map((standard, index) => {
-                    const locationLines = getStandardLocationLines(standard);
                     const lastResultStatus = statsMap.get(standard.id)?.last_result_status;
                     return (
                       <ListButton
@@ -410,7 +388,6 @@ export function StudySetupPage() {
                           <strong style={{ color: '#173d7a', fontSize: 16, lineHeight: 1.5 }}>{`${index + 1}. ${standard.title}`}</strong>
                           <Chip>{`Lv${standard.level}`}</Chip>
                         </RowTop>
-                        <ButtonTitle>{locationLines[2] ?? currentChapter.label}</ButtonTitle>
                         {lastResultStatus ? <HistoryText>{`최근 이력 ${lastResultStatus}`}</HistoryText> : null}
                       </ListButton>
                     );

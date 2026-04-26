@@ -32,7 +32,6 @@ const ChoiceCard = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
-  gap: '$2',
   minHeight: '108px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -54,12 +53,6 @@ const ButtonLabel = styled('div', {
   lineHeight: 1.3,
 });
 
-const ButtonTitle = styled('div', {
-  fontSize: '$2',
-  color: '$mutedText',
-  lineHeight: 1.6,
-});
-
 const HeaderCard = styled(Card, {
   display: 'grid',
   gap: '$3',
@@ -70,12 +63,6 @@ const HeaderTitle = styled('div', {
   fontSize: '$5',
   lineHeight: 1.15,
   color: '$primary',
-});
-
-const HeaderBody = styled('div', {
-  color: '$mutedText',
-  fontSize: '$2',
-  lineHeight: 1.7,
 });
 
 const ActionRow = styled('div', {
@@ -140,12 +127,123 @@ const HistoryText = styled('div', {
   letterSpacing: '0.02em',
 });
 
+const ProgressCard = styled(Card, {
+  display: 'grid',
+  gap: '$5',
+  '&::before': {
+    display: 'none',
+  },
+});
+
+const ProgressList = styled('div', {
+  display: 'grid',
+  gap: '$4',
+});
+
+const ProgressRow = styled('div', {
+  display: 'grid',
+  gap: '$2',
+});
+
+const ProgressTop = styled('div', {
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: '$3',
+});
+
+const ProgressName = styled('div', {
+  display: 'grid',
+  gap: '$1',
+});
+
+const ProgressLabel = styled('strong', {
+  fontSize: '$3',
+  color: '$primary',
+  fontWeight: 700,
+  lineHeight: 1.45,
+});
+
+const ProgressMeta = styled('span', {
+  fontSize: '$2',
+  color: '$mutedText',
+});
+
+const ProgressValue = styled('span', {
+  fontSize: '$2',
+  color: '$subtleText',
+  fontWeight: 700,
+});
+
+const Track = styled('div', {
+  display: 'flex',
+  width: '100%',
+  height: '8px',
+  borderRadius: '$pill',
+  overflow: 'hidden',
+  backgroundColor: '$surfaceStrong',
+});
+
+const Segment = styled('div', {
+  height: '100%',
+});
+
 type SetupMode = 'RANDOM' | 'SELECT' | null;
 
 type ChapterGroup = ReturnType<typeof groupQuestionsByChapter>[number];
+type ExamProgressItem = {
+  key: string;
+  label: string;
+  title?: string;
+  correctRate: number;
+  wrongRate: number;
+  totalRate: number;
+};
+
+function percent(part: number, whole: number) {
+  if (!whole) {
+    return 0;
+  }
+  return Number(((part / whole) * 100).toFixed(1));
+}
+
+function isSuccess(status: string | null | undefined) {
+  return status === 'EXCELLENT' || status === 'CORRECT';
+}
 
 function getPartTitle(questions: ExamQuestion[], partNo: number) {
   return questions.find((item) => item.part_no === partNo)?.part_title || `${partNo}편`;
+}
+
+function buildExamProgressItems(questions: ExamQuestion[], latestAttemptMap: Map<string, ExamAttempt>) {
+  return getAvailableExamParts(questions).map((partNo) => {
+    const partQuestions = questions.filter((item) => item.part_no === partNo);
+    const total = partQuestions.length;
+    let correctCount = 0;
+    let wrongCount = 0;
+
+    for (const question of partQuestions) {
+      const latest = latestAttemptMap.get(question.id);
+      if (!latest) {
+        continue;
+      }
+
+      if (isSuccess(latest.result_status)) {
+        correctCount += 1;
+      } else if (latest.result_status !== 'SKIPPED') {
+        wrongCount += 1;
+      }
+    }
+
+    return {
+      key: `exam-part-${partNo}`,
+      label: `${partNo}편`,
+      title: getPartTitle(questions, partNo),
+      correctRate: percent(correctCount, total),
+      wrongRate: percent(wrongCount, total),
+      totalRate: percent(correctCount + wrongCount, total),
+    } satisfies ExamProgressItem;
+  });
 }
 
 export function ExamNotesPage() {
@@ -154,6 +252,7 @@ export function ExamNotesPage() {
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [notice, setNotice] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
+  const [started, setStarted] = useState(false);
   const [setupMode, setSetupMode] = useState<SetupMode>(null);
   const [selectedPartNo, setSelectedPartNo] = useState<number | null>(null);
   const [selectedChapterNo, setSelectedChapterNo] = useState<number | null>(null);
@@ -200,21 +299,42 @@ export function ExamNotesPage() {
     () => chapterGroups.find((item) => item.chapterNo === selectedChapterNo) ?? null,
     [chapterGroups, selectedChapterNo],
   );
+  const progressItems = useMemo(() => buildExamProgressItems(questions, latestAttemptMap), [questions, latestAttemptMap]);
 
   return (
     <Layout title="기출노트">
       <Stack>
         {notice ? <Notice>{notice}</Notice> : null}
 
-        {setupMode === null ? (
+        <ProgressCard>
+          <ProgressList>
+            {progressItems.map((item) => (
+              <ProgressRow key={item.key}>
+                <ProgressTop>
+                  <ProgressName>
+                    <ProgressLabel>{item.title ? `${item.label}: ${item.title}` : item.label}</ProgressLabel>
+                    <ProgressMeta>{loading ? '' : `${item.correctRate.toFixed(1)}% / ${item.wrongRate.toFixed(1)}%`}</ProgressMeta>
+                  </ProgressName>
+                  <ProgressValue>{loading ? '-' : `${item.totalRate.toFixed(1)}%`}</ProgressValue>
+                </ProgressTop>
+                <Track>
+                  <Segment css={{ width: `${item.correctRate}%`, backgroundColor: '$success' }} />
+                  <Segment css={{ width: `${item.wrongRate}%`, backgroundColor: '$danger' }} />
+                </Track>
+              </ProgressRow>
+            ))}
+          </ProgressList>
+
+          {!started ? <Button onClick={() => setStarted(true)}>학습 시작</Button> : null}
+        </ProgressCard>
+
+        {started && setupMode === null ? (
           <ChoiceGrid>
             <ChoiceCard onClick={() => setSetupMode('RANDOM')}>
               <ButtonLabel>RANDOM</ButtonLabel>
-              <ButtonTitle>선택한 범위 안에서 랜덤으로 기출문제를 출제합니다.</ButtonTitle>
             </ChoiceCard>
             <ChoiceCard onClick={() => setSetupMode('SELECT')}>
               <ButtonLabel>SELECT</ButtonLabel>
-              <ButtonTitle>편과 장을 고른 뒤 문제를 순서대로 직접 선택합니다.</ButtonTitle>
             </ChoiceCard>
           </ChoiceGrid>
         ) : null}
@@ -223,7 +343,6 @@ export function ExamNotesPage() {
           <Stack>
             <HeaderCard>
               <HeaderTitle>RANDOM</HeaderTitle>
-              <HeaderBody>범위를 고르면 그 안에서 랜덤으로 기출문제를 출제합니다.</HeaderBody>
               <ActionRow>
                 <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSetupMode(null)}>
                   방식 다시 선택
@@ -237,14 +356,14 @@ export function ExamNotesPage() {
                 return (
                   <ChoiceCard key={partNo} onClick={() => navigate(`/exam-notes/play?mode=part&partNo=${partNo}`)}>
                     <ButtonLabel>{`${partNo}편`}</ButtonLabel>
-                    <ButtonTitle>{`${getPartTitle(questions, partNo)} · ${partQuestions.length}문제`}</ButtonTitle>
+                    {partQuestions.length > 0 ? <HistoryText>{`${partQuestions.length}문제`}</HistoryText> : null}
                   </ChoiceCard>
                 );
               })}
 
               <ChoiceCard onClick={() => navigate('/exam-notes/play?mode=random')}>
                 <ButtonLabel>전체</ButtonLabel>
-                <ButtonTitle>{loading ? '불러오는 중...' : `${questions.length}문제 랜덤`}</ButtonTitle>
+                {!loading ? <HistoryText>{`${questions.length}문제`}</HistoryText> : null}
               </ChoiceCard>
             </ChoiceGrid>
           </Stack>
@@ -254,7 +373,6 @@ export function ExamNotesPage() {
           <Stack>
             <HeaderCard>
               <HeaderTitle>SELECT</HeaderTitle>
-              <HeaderBody>편을 고르고, 장을 고른 뒤, 문제를 순서대로 직접 선택해서 풉니다.</HeaderBody>
               <ActionRow>
                 {selectedChapterNo !== null ? (
                   <Button tone="secondary" css={{ width: 'auto', minHeight: '44px' }} onClick={() => setSelectedChapterNo(null)}>
@@ -286,7 +404,7 @@ export function ExamNotesPage() {
                   return (
                     <ChoiceCard key={partNo} onClick={() => setSelectedPartNo(partNo)}>
                       <ButtonLabel>{`${partNo}편`}</ButtonLabel>
-                      <ButtonTitle>{`${getPartTitle(questions, partNo)} · ${partQuestions.length}문제`}</ButtonTitle>
+                      {partQuestions.length > 0 ? <HistoryText>{`${partQuestions.length}문제`}</HistoryText> : null}
                     </ChoiceCard>
                   );
                 })}
@@ -298,7 +416,7 @@ export function ExamNotesPage() {
                 {chapterGroups.map((chapter) => (
                   <ChoiceCard key={chapter.chapterNo} onClick={() => setSelectedChapterNo(chapter.chapterNo)}>
                     <ButtonLabel>{`${chapter.chapterNo}장`}</ButtonLabel>
-                    <ButtonTitle>{`${chapter.chapterTitle || `${chapter.chapterNo}장`} · ${chapter.questionCount}문제`}</ButtonTitle>
+                    {chapter.questionCount > 0 ? <HistoryText>{`${chapter.questionCount}문제`}</HistoryText> : null}
                   </ChoiceCard>
                 ))}
               </ChoiceGrid>
@@ -306,7 +424,7 @@ export function ExamNotesPage() {
 
             {selectedPartNo !== null && currentChapter ? (
               <ListCard>
-                <HeaderBody>{`${selectedPartNo}편 · ${currentChapter.chapterTitle || `${currentChapter.chapterNo}장`}`}</HeaderBody>
+                <div style={{ color: '#6f7d90', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.chapterTitle || `${currentChapter.chapterNo}장`}`}</div>
                 <ListGrid>
                   {currentChapter.questions.map((question, index) => {
                     const lastResultStatus = latestAttemptMap.get(question.id)?.result_status;
@@ -325,7 +443,6 @@ export function ExamNotesPage() {
                           </strong>
                           <Chip>{question.exam_years[0] ? `${question.exam_years[0]}` : `Q${question.problem_no ?? '-'}`}</Chip>
                         </RowTop>
-                        <ButtonTitle>{formatExamText(question.question_text).slice(0, 90)}...</ButtonTitle>
                         {lastResultStatus ? <HistoryText>{`최근 이력 ${lastResultStatus}`}</HistoryText> : null}
                       </ListButton>
                     );

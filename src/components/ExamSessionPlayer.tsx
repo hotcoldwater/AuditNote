@@ -237,7 +237,7 @@ export function ExamSessionPlayer({
       return;
     }
     void loadQuestion();
-  }, [authLoading, chapterNo, partNo, preferredQuestionId, user?.id]);
+  }, [authLoading, chapterNo, mode, partNo, preferredQuestionId, user?.id]);
 
   async function submitAnswer(submittedAnswer: string) {
     if (!user || !current || submitting) {
@@ -354,9 +354,9 @@ export function ExamSessionPlayer({
               <Button tone="ghost" onClick={() => void handleSkip()} disabled={submitting}>
                 SKIP
               </Button>
-        <Button tone="secondary" onClick={() => navigate('/exam-notes')} disabled={submitting}>
-          기출노트 종료
-        </Button>
+              <Button tone="secondary" onClick={() => navigate('/exam-notes')} disabled={submitting}>
+                기출노트 종료
+              </Button>
             </div>
           </>
         ) : null}

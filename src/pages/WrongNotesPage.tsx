@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/Card';
 import { Layout } from '../components/Layout';
 import { styled } from '../styles/stitches.config';
 
@@ -13,7 +12,6 @@ const ChoiceCard = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
-  gap: '$2',
   minHeight: '120px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -31,14 +29,8 @@ const ChoiceCard = styled('button', {
 const ChoiceTitle = styled('div', {
   color: '$primary',
   fontWeight: 700,
-  fontSize: '$3',
-  lineHeight: 1.4,
-});
-
-const ChoiceMeta = styled('div', {
-  color: '$mutedText',
-  fontSize: '$2',
-  lineHeight: 1.6,
+  fontSize: '$4',
+  lineHeight: 1.3,
 });
 
 export function WrongNotesPage() {
@@ -46,18 +38,12 @@ export function WrongNotesPage() {
 
   return (
     <Layout title="오답노트">
-      <Card css={{ display: 'grid', gap: '$2' }}>
-        <strong>오답 유형을 선택합니다.</strong>
-      </Card>
-
       <ChoiceGrid>
         <ChoiceCard onClick={() => navigate('/wrong-notes/haggeut')}>
           <ChoiceTitle>하끝 오답</ChoiceTitle>
-          <ChoiceMeta>기존 하끝 오답노트를 확인하고 다시 풉니다.</ChoiceMeta>
         </ChoiceCard>
         <ChoiceCard onClick={() => navigate('/wrong-notes/exam')}>
           <ChoiceTitle>기출 오답</ChoiceTitle>
-          <ChoiceMeta>기출노트에서 틀렸던 문제만 다시 확인합니다.</ChoiceMeta>
         </ChoiceCard>
       </ChoiceGrid>
     </Layout>

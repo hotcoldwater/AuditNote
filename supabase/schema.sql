@@ -249,11 +249,14 @@ with check (auth.uid() = user_id);
 
 create table if not exists public.exam_questions (
   id text primary key,
+  content_type text,
   part_no integer not null,
   chapter_no integer not null,
   section_no integer,
   problem_no integer,
   exam_year_raw text,
+  exam_round text,
+  exam_variant text,
   exam_years text[] not null default '{}',
   source_page text,
   part_title text not null,
@@ -262,6 +265,8 @@ create table if not exists public.exam_questions (
   question_text text not null,
   answer_text text not null,
   explanation_text text,
+  required_keywords text[] not null default '{}',
+  optional_keywords text[] not null default '{}',
   is_active boolean not null default true,
   check_status text not null default 'DRAFT',
   note text,
