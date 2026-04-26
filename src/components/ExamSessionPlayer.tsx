@@ -8,6 +8,7 @@ import type { ExamAttempt, ExamGradingPayload, ExamQuestion, GradingMetadata, Sc
 import { Button } from './Button';
 import { Card } from './Card';
 import { ExamResultPanel } from './ExamResultPanel';
+import { RichTextContent } from './RichTextContent';
 import { Textarea } from './Textarea';
 import { styled } from '../styles/stitches.config';
 
@@ -105,7 +106,6 @@ const QuestionBody = styled('div', {
   color: '$text',
   fontSize: '$3',
   lineHeight: 1.9,
-  whiteSpace: 'pre-wrap',
   wordBreak: 'keep-all',
 });
 
@@ -346,7 +346,9 @@ export function ExamSessionPlayer({
           {latestAttempt?.result_status ? <HistoryBadge>{latestAttempt.result_status}</HistoryBadge> : null}
         </TitleRow>
 
-        <QuestionBody>{formatExamText(current.question_text)}</QuestionBody>
+        <QuestionBody>
+          <RichTextContent value={formatExamText(current.question_text)} />
+        </QuestionBody>
 
         {!result ? (
           <>

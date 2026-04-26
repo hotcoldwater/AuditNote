@@ -5,6 +5,7 @@ import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
+import { RichTextContent } from './RichTextContent';
 
 const Stack = styled('div', {
   display: 'grid',
@@ -69,7 +70,6 @@ const Body = styled('div', {
   borderRadius: '$md',
   padding: '$5',
   lineHeight: 1.9,
-  whiteSpace: 'pre-wrap',
   border: '1px solid $borderSoft',
   wordBreak: 'keep-all',
 });
@@ -208,11 +208,15 @@ export function ResultPanel({
             {examYears ? <Reference>{`출제: ${examYears}`}</Reference> : null}
           </AnswerMeta>
           <Reference>모범답안</Reference>
-          <Body>{formatAnswerForDisplay(standard.answer)}</Body>
+          <Body>
+            <RichTextContent value={formatAnswerForDisplay(standard.answer)} />
+          </Body>
         </Section>
         <Section>
           <Reference>내 답안</Reference>
-          <Body>{userAnswer.trim() || '미응답'}</Body>
+          <Body>
+            <RichTextContent value={userAnswer.trim() || '미응답'} />
+          </Body>
         </Section>
       </Stack>
 

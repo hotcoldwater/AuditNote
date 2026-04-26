@@ -12,6 +12,9 @@ const ChoiceCard = styled('button', {
   all: 'unset',
   boxSizing: 'border-box',
   display: 'grid',
+  alignContent: 'center',
+  justifyItems: 'center',
+  textAlign: 'center',
   minHeight: '120px',
   padding: '$5',
   border: '1px solid $borderSoft',
@@ -29,7 +32,7 @@ const ChoiceCard = styled('button', {
 const ChoiceTitle = styled('div', {
   color: '$primary',
   fontWeight: 700,
-  fontSize: '$4',
+  fontSize: '$5',
   lineHeight: 1.3,
 });
 

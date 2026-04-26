@@ -4,6 +4,7 @@ import { styled } from '../styles/stitches.config';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
+import { RichTextContent } from './RichTextContent';
 
 const Stack = styled('div', {
   display: 'grid',
@@ -27,7 +28,6 @@ const Body = styled('div', {
   border: '1px solid $borderSoft',
   padding: '$5',
   lineHeight: 1.9,
-  whiteSpace: 'pre-wrap',
   wordBreak: 'keep-all',
 });
 
@@ -111,17 +111,23 @@ export function ExamResultPanel({
         <Section>
           <Label>{formatExamMeta(question)}</Label>
           <Label>모범답안</Label>
-          <Body>{formatExamText(details.modelAnswer || question.answer_text)}</Body>
+          <Body>
+            <RichTextContent value={formatExamText(details.modelAnswer || question.answer_text)} />
+          </Body>
         </Section>
         {details.correctPoints.length > 0 ? (
           <Section>
             <Label>맞게 쓴 부분</Label>
-            <Body>{formatExamText(details.correctPoints.map((item) => `- ${item}`).join('\n'))}</Body>
+            <Body>
+              <RichTextContent value={formatExamText(details.correctPoints.map((item) => `- ${item}`).join('\n'))} />
+            </Body>
           </Section>
         ) : null}
         <Section>
           <Label>내 답안</Label>
-          <Body>{formatExamText(userAnswer.trim() || '미응답')}</Body>
+          <Body>
+            <RichTextContent value={formatExamText(userAnswer.trim() || '미응답')} />
+          </Body>
         </Section>
       </Stack>
 
