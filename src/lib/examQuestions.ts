@@ -1,5 +1,6 @@
 import type { ExamQuestion } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { formatDetailedTextForDisplay } from './standardDisplay';
 
 const SUPABASE_TIMEOUT_MS = 12000;
 
@@ -187,10 +188,10 @@ export function getAvailableExamParts(questions: ExamQuestion[]) {
 }
 
 export function formatExamText(value: string) {
-  return String(value ?? '')
-    .replace(/\\n/g, '\n')
-    .replace(/\r\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/[ \t]+\n/g, '\n')
-    .trim();
+  return formatDetailedTextForDisplay(
+    String(value ?? '')
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .trim(),
+  );
 }

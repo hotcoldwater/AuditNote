@@ -31,20 +31,32 @@ export function formatExamYears(examYears: string[]) {
     .join(', ');
 }
 
-export function formatAnswerForDisplay(answer: string) {
-  let value = answer.replace(/\\n/g, '\n').replace(/\r/g, '');
+function normalizeDisplayText(value: string) {
+  let next = value.replace(/\\n/g, '\n').replace(/\r/g, '');
 
-  value = value.replace(/(?:^|\s)n\/\s*/gi, '\n');
-  value = value.replace(/(?:^|[\t ]+)(\d+\))/g, (_match, group, offset) => (offset === 0 ? group : `\n${group}`));
-  value = value.replace(
+  next = next.replace(/(?:^|\s)n\/\s*/gi, '\n');
+  next = next.replace(/(?:^|[\t ]+)(\(\d+\))/g, (_match, group, offset) => (offset === 0 ? group : `\n${group}`));
+  next = next.replace(/(?:^|[\t ]+)(\d+\))/g, (_match, group, offset) => (offset === 0 ? group : `\n${group}`));
+  next = next.replace(
     /(?:^|[\t ]+)([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮㉠㉡㉢㉣㉤㉥㉦㉧])/g,
     (_match, group, offset) => (offset === 0 ? group : `\n${group}`),
   );
-  value = value.replace(/\n{3,}/g, '\n\n');
+  next = next.replace(/([.다요음함])\s+(결론\s*:|근거\s*:|이유\s*:|판단\s*:)/g, '$1\n$2');
+  next = next.replace(/([.다요음함])\s+(\(\d+\))/g, '$1\n$2');
+  next = next.replace(/([.다요음함])\s+(①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩|㉠|㉡|㉢|㉣|㉤|㉥)/g, '$1\n$2');
+  next = next.replace(/\n{3,}/g, '\n\n');
 
-  return value
+  return next
     .split('\n')
     .map((line) => line.trim())
     .join('\n')
     .trim();
+}
+
+export function formatAnswerForDisplay(answer: string) {
+  return normalizeDisplayText(answer);
+}
+
+export function formatDetailedTextForDisplay(value: string) {
+  return normalizeDisplayText(value);
 }

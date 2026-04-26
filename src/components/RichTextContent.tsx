@@ -1,5 +1,3 @@
-import { Fragment } from 'react';
-
 type TableBlock = {
   type: 'table';
   header: string[];
