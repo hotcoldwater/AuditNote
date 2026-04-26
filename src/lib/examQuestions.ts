@@ -44,20 +44,67 @@ function toArray(value: string | null | undefined) {
     .filter(Boolean);
 }
 
+function parseTsvRows(content: string) {
+  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentCell = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const char = normalized[index];
+    const next = normalized[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        currentCell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === '\t' && !inQuotes) {
+      currentRow.push(currentCell);
+      currentCell = '';
+      continue;
+    }
+
+    if (char === '\n' && !inQuotes) {
+      currentRow.push(currentCell);
+      if (currentRow.some((cell) => cell.trim() !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentCell = '';
+      continue;
+    }
+
+    currentCell += char;
+  }
+
+  currentRow.push(currentCell);
+  if (currentRow.some((cell) => cell.trim() !== '')) {
+    rows.push(currentRow);
+  }
+
+  return rows;
+}
+
 function parseTsv(content: string) {
-  const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim());
-  if (lines.length === 0) {
+  const rows = parseTsvRows(content);
+  if (rows.length === 0) {
     return [] as RawRow[];
   }
 
-  const headers = lines[0].split('\t').map((item) => item.trim());
-  return lines.slice(1).map((line) => {
-    const cells = line.split('\t');
-    return headers.reduce<RawRow>((acc, header, index) => {
+  const headers = rows[0].map((item) => item.trim());
+  return rows.slice(1).map((cells) =>
+    headers.reduce<RawRow>((acc, header, index) => {
       acc[header] = cells[index]?.trim() ?? '';
       return acc;
-    }, {});
-  });
+    }, {}),
+  );
 }
 
 function normalizeExamQuestion(row: any): ExamQuestion {
