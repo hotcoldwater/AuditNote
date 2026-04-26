@@ -4,6 +4,8 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { ExamNotesPage } from './pages/ExamNotesPage';
+import { ExamPlayPage } from './pages/ExamPlayPage';
 import { RecordsPage } from './pages/RecordsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SignupPage } from './pages/SignupPage';
@@ -21,6 +23,8 @@ export default function App() {
       <Route path="/auth/confirmed" element={<AuthConfirmedPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/exam-notes" element={<ExamNotesPage />} />
+        <Route path="/exam-notes/play" element={<ExamPlayPage />} />
         <Route path="/study/setup" element={<StudySetupPage />} />
         <Route path="/study/play" element={<StudyPlayPage />} />
         <Route path="/wrong/play" element={<WrongPlayPage />} />

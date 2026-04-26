@@ -182,3 +182,52 @@ export interface DashboardStats {
   frequentWrongStandards: FrequentWrongItem[];
   recentAttempts: RecentStudyItem[];
 }
+
+export interface ExamQuestion {
+  id: string;
+  part_no: number;
+  chapter_no: number;
+  section_no: number | null;
+  problem_no: number | null;
+  exam_year_raw: string | null;
+  exam_years: string[];
+  source_page: string | null;
+  part_title: string;
+  chapter_title: string;
+  section_title: string | null;
+  question_text: string;
+  answer_text: string;
+  explanation_text: string | null;
+  is_active: boolean;
+  check_status: string;
+  note: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ExamAttempt {
+  id: string;
+  user_id: string;
+  question_id: string;
+  user_answer: string;
+  score: number;
+  result_status: ResultStatus;
+  grading_method?: string | null;
+  grading_model?: string | null;
+  ai_summary?: string | null;
+  raw_grading_result?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ExamGradingPayload {
+  score: number;
+  maxScore: number;
+  grade: string;
+  confidence: string;
+  summary: string;
+  correctPoints: string[];
+  missingPoints: string[];
+  wrongPoints: string[];
+  advice: string;
+  modelAnswer: string;
+}

@@ -180,6 +180,9 @@ export function Layout({
             <NavLink to="/" className={location.pathname === '/' ? 'active' : ''}>
               학습노트
             </NavLink>
+            <NavLink to="/exam-notes" className={location.pathname.startsWith('/exam-notes') ? 'active' : ''}>
+              기출노트
+            </NavLink>
             <NavLink
               to="/wrong-notes"
               className={location.pathname.startsWith('/wrong') ? 'active' : ''}
@@ -200,6 +203,10 @@ export function Layout({
           <MobileNavLink to="/" className={location.pathname === '/' ? 'active' : ''}>
             <span className="material-symbols-outlined">home</span>
             <span>학습노트</span>
+          </MobileNavLink>
+          <MobileNavLink to="/exam-notes" className={location.pathname.startsWith('/exam-notes') ? 'active' : ''}>
+            <span className="material-symbols-outlined">edit_note</span>
+            <span>기출노트</span>
           </MobileNavLink>
           <MobileNavLink to="/wrong-notes" className={location.pathname.startsWith('/wrong') ? 'active' : ''}>
             <span className="material-symbols-outlined">note_stack</span>

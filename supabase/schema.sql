@@ -246,3 +246,70 @@ create policy "issue_reports_insert_own"
 on public.issue_reports
 for insert
 with check (auth.uid() = user_id);
+
+create table if not exists public.exam_questions (
+  id text primary key,
+  part_no integer not null,
+  chapter_no integer not null,
+  section_no integer,
+  problem_no integer,
+  exam_year_raw text,
+  exam_years text[] not null default '{}',
+  source_page text,
+  part_title text not null,
+  chapter_title text not null,
+  section_title text,
+  question_text text not null,
+  answer_text text not null,
+  explanation_text text,
+  is_active boolean not null default true,
+  check_status text not null default 'DRAFT',
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.exam_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  question_id text not null references public.exam_questions(id) on delete cascade,
+  user_answer text not null default '',
+  score integer not null,
+  result_status text not null,
+  grading_method text,
+  grading_model text,
+  ai_summary text,
+  raw_grading_result jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_exam_questions_part_chapter on public.exam_questions (part_no, chapter_no);
+create index if not exists idx_exam_attempts_user_created_at on public.exam_attempts (user_id, created_at desc);
+create index if not exists idx_exam_attempts_user_question_created_at on public.exam_attempts (user_id, question_id, created_at desc);
+
+drop trigger if exists trg_exam_questions_updated_at on public.exam_questions;
+create trigger trg_exam_questions_updated_at
+before update on public.exam_questions
+for each row
+execute function public.set_updated_at();
+
+alter table public.exam_questions enable row level security;
+alter table public.exam_attempts enable row level security;
+
+drop policy if exists "exam_questions_select_authenticated" on public.exam_questions;
+create policy "exam_questions_select_authenticated"
+on public.exam_questions
+for select
+using (auth.role() = 'authenticated');
+
+drop policy if exists "exam_attempts_select_own" on public.exam_attempts;
+create policy "exam_attempts_select_own"
+on public.exam_attempts
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "exam_attempts_insert_own" on public.exam_attempts;
+create policy "exam_attempts_insert_own"
+on public.exam_attempts
+for insert
+with check (auth.uid() = user_id);
