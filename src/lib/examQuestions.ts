@@ -210,6 +210,20 @@ export async function fetchExamQuestions(partNo?: number | null, chapterNo?: num
   }
 }
 
+export async function fetchExamQuestionsByIds(ids: string[]) {
+  const uniqueIds = [...new Set(ids)].filter(Boolean);
+
+  if (uniqueIds.length === 0) {
+    return { questions: [], source: 'local' as const };
+  }
+
+  const payload = await fetchExamQuestions();
+  return {
+    ...payload,
+    questions: payload.questions.filter((item) => uniqueIds.includes(item.id)),
+  };
+}
+
 export function groupQuestionsByChapter(questions: ExamQuestion[]) {
   const groups = new Map<number, ExamQuestion[]>();
 

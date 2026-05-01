@@ -16,3 +16,17 @@ export function ProtectedRoute() {
 
   return <Outlet />;
 }
+
+export function AdminRoute() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <AuthSplash title="감사노트" />;
+  }
+
+  if (!user?.isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
+}

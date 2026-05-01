@@ -2,6 +2,7 @@ export type ResultStatus = 'EXCELLENT' | 'CORRECT' | 'REVIEW' | 'WRONG' | 'SKIPP
 export type GradingMethod = 'ai' | 'rule' | 'rule-fallback';
 export type WrongNoteStatus = 'WRONG' | 'REVIEW';
 export type IssueReportType = 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT';
+export type IssueReportSourceKind = 'STUDY' | 'EXAM';
 
 export type StudyMode = 'RANDOM' | 'PART' | 'SELECT' | 'WRONG_NOTE';
 
@@ -110,10 +111,15 @@ export interface GradingMetadata {
 export interface IssueReport {
   id: string;
   user_id: string;
-  standard_id: string;
+  source_kind: IssueReportSourceKind;
+  standard_id: string | null;
+  question_id: string | null;
   report_type: IssueReportType;
   result_status: ResultStatus | null;
   detail: string | null;
+  is_resolved: boolean;
+  resolved_at: string | null;
+  resolved_by: string | null;
   created_at: string;
 }
 
@@ -140,6 +146,7 @@ export interface AuthUser {
   fullName?: string | null;
   birthDate?: string | null;
   gender?: string | null;
+  isAdmin?: boolean;
   isDemo?: boolean;
 }
 

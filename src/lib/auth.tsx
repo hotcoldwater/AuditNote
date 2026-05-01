@@ -49,6 +49,7 @@ function fallbackAuthUser(user: User): AuthUser {
     fullName: user.user_metadata.full_name ?? null,
     birthDate: user.user_metadata.birth_date ?? null,
     gender: user.user_metadata.gender ?? null,
+    isAdmin: Boolean(user.user_metadata.is_admin),
   };
 }
 
@@ -58,7 +59,7 @@ async function loadProfile(user: User): Promise<AuthUser> {
   }
 
   const { data } = await withTimeout(
-    supabase.from('profiles').select('nickname, email, full_name, birth_date, gender').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('nickname, email, full_name, birth_date, gender, is_admin').eq('id', user.id).maybeSingle(),
     AUTH_TIMEOUT_MS,
   );
 
@@ -69,6 +70,7 @@ async function loadProfile(user: User): Promise<AuthUser> {
     fullName: data?.full_name ?? user.user_metadata.full_name ?? null,
     birthDate: data?.birth_date ?? user.user_metadata.birth_date ?? null,
     gender: data?.gender ?? user.user_metadata.gender ?? null,
+    isAdmin: data?.is_admin ?? Boolean(user.user_metadata.is_admin),
   };
 }
 
@@ -182,6 +184,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             id: 'demo-user',
             email: email || 'demo@auditnote.local',
             nickname: email.split('@')[0] || '샘플사용자',
+            isAdmin: false,
             isDemo: true,
           };
           setDemoUser(demoUser);
@@ -206,6 +209,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             fullName: trimmedFullName || null,
             birthDate: trimmedBirthDate || null,
             gender: trimmedGender || null,
+            isAdmin: false,
             isDemo: true,
           };
           setDemoUser(demoUser);

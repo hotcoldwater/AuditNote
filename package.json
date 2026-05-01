@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "import:standards": "tsx scripts/importStandards.ts",
-    "import:exams": "tsx scripts/importExamQuestions.ts"
+    "import:exams": "tsx scripts/importExamQuestions.ts",
+    "backup:exams": "tsx scripts/backupExamQuestions.ts",
+    "audit:exams": "tsx scripts/auditExamQuestions.ts",
+    "reconcile:exams": "tsx scripts/reconcileExamQuestions.ts"
   },
   "dependencies": {
     "@stitches/react": "^1.2.8",

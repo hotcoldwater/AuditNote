@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute, ProtectedRoute } from './components/ProtectedRoute';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
 import { HomePage } from './pages/HomePage';
@@ -16,6 +16,7 @@ import { StudyPlayPage } from './pages/StudyPlayPage';
 import { StudySetupPage } from './pages/StudySetupPage';
 import { WrongNotesPage } from './pages/WrongNotesPage';
 import { WrongPlayPage } from './pages/WrongPlayPage';
+import { AdminNotesPage } from './pages/AdminNotesPage';
 
 export default function App() {
   return (
@@ -37,6 +38,9 @@ export default function App() {
         <Route path="/wrong-notes/haggeut" element={<HaggeutWrongNotesPage />} />
         <Route path="/wrong-notes/exam" element={<ExamWrongNotesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin-notes" element={<AdminNotesPage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

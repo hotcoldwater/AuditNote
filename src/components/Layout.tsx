@@ -167,6 +167,7 @@ export function Layout({
 }) {
   const location = useLocation();
   const { user, usingDemo } = useAuth();
+  const isAdmin = Boolean(user?.isAdmin);
 
   return (
     <Shell>
@@ -192,6 +193,11 @@ export function Layout({
             <NavLink to="/records" className={location.pathname === '/records' ? 'active' : ''}>
               기록노트
             </NavLink>
+            {isAdmin ? (
+              <NavLink to="/admin-notes" className={location.pathname.startsWith('/admin-notes') ? 'active' : ''}>
+                관리노트
+              </NavLink>
+            ) : null}
           </NavGroup>
           <ProfileLink to="/settings" aria-label="개인정보설정">
             <Badge tone={usingDemo ? 'warning' : 'primary'}>
@@ -216,6 +222,12 @@ export function Layout({
             <span className="material-symbols-outlined">menu_book</span>
             <span>기록노트</span>
           </MobileNavLink>
+          {isAdmin ? (
+            <MobileNavLink to="/admin-notes" className={location.pathname.startsWith('/admin-notes') ? 'active' : ''}>
+              <span className="material-symbols-outlined">shield_person</span>
+              <span>관리노트</span>
+            </MobileNavLink>
+          ) : null}
         </MobileNav>
       </TopBar>
       <Inner>

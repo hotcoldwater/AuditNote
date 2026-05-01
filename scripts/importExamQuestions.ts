@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import fs from 'node:fs';
-import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import path from 'node:path';
+import { buildExamCompositeKey, collectExamFiles, parseTsv, type RawRow } from './lib/examTsv';
 
-type RawRow = Record<string, string>;
 type ValidationIssue = { row: string; id: string; message: string };
 
 const FIELD_MAP: Record<string, string> = {
@@ -58,94 +58,9 @@ function toArray(value: string) {
     .filter(Boolean);
 }
 
-function parseTsvRows(content: string) {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentCell = '';
-  let inQuotes = false;
-
-  for (let index = 0; index < normalized.length; index += 1) {
-    const char = normalized[index];
-    const next = normalized[index + 1];
-
-    if (char === '"') {
-      if (inQuotes && next === '"') {
-        currentCell += '"';
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (char === '\t' && !inQuotes) {
-      currentRow.push(currentCell);
-      currentCell = '';
-      continue;
-    }
-
-    if (char === '\n' && !inQuotes) {
-      currentRow.push(currentCell);
-      if (currentRow.some((cell) => cell.trim() !== '')) {
-        rows.push(currentRow);
-      }
-      currentRow = [];
-      currentCell = '';
-      continue;
-    }
-
-    currentCell += char;
-  }
-
-  currentRow.push(currentCell);
-  if (currentRow.some((cell) => cell.trim() !== '')) {
-    rows.push(currentRow);
-  }
-
-  return rows;
-}
-
-function parseTsv(content: string) {
-  const rows = parseTsvRows(content);
-  if (rows.length === 0) {
-    throw new Error('TSV 파일이 비어 있습니다.');
-  }
-
-  const headers = rows[0].map((item) => item.trim());
-  const missingColumns = REQUIRED_COLUMNS.filter((column) => !headers.includes(column));
-  if (missingColumns.length > 0) {
-    throw new Error(`필수 컬럼 누락: ${missingColumns.join(', ')}`);
-  }
-
-  const hasQuestionColumn = headers.includes('questionText') || headers.includes('question');
-  const hasAnswerColumn = headers.includes('answerText') || headers.includes('answer');
-  const hasPartColumn = headers.includes('partNo');
-  const hasChapterColumn = headers.includes('chapterNo');
-
-  if (!hasQuestionColumn || !hasAnswerColumn || !hasPartColumn || !hasChapterColumn) {
-    throw new Error('기출 TSV 형식이 올바르지 않습니다. partNo/chapterNo/questionText(or question)/answerText(or answer)가 필요합니다.');
-  }
-
-  return rows.slice(1).map((cells) =>
-    headers.reduce<RawRow>((acc, header, index) => {
-      acc[header] = cells[index]?.trim() ?? '';
-      return acc;
-    }, {}),
-  );
-}
-
-function collectExamFiles() {
-  const dataDir = path.resolve(process.cwd(), 'data');
-  return fs
-    .readdirSync(dataDir)
-    .filter((file) => /^DoeActualExam_.*\.tsv$/i.test(file))
-    .sort()
-    .map((file) => path.join(dataDir, file));
-}
-
 function validateAndTransform(rows: Array<{ source: string; row: RawRow }>) {
   const seenIds = new Set<string>();
+  const seenCompositeKeys = new Map<string, string>();
   const issues: ValidationIssue[] = [];
   const invalidIndexes = new Set<number>();
   const transformed: Record<string, unknown>[] = [];
@@ -174,6 +89,21 @@ function validateAndTransform(rows: Array<{ source: string; row: RawRow }>) {
       invalidIndexes.add(index);
     }
     seenIds.add(id);
+
+    const compositeKey = buildExamCompositeKey({
+      partNo: row.partNo,
+      chapterNo: row.chapterNo,
+      sectionNo: row.sectionNo,
+      problemNo: row.problemNo,
+      questionText: row.questionText ?? row.question,
+    });
+    const previousComposite = seenCompositeKeys.get(compositeKey);
+    if (previousComposite) {
+      issues.push({ row: location, id: id || '-', message: `중복 문항 내용 (${previousComposite})` });
+      invalidIndexes.add(index);
+    } else {
+      seenCompositeKeys.set(compositeKey, id || location);
+    }
 
     const record: Record<string, unknown> = {};
 
@@ -226,7 +156,27 @@ async function main() {
     throw new Error('가져올 기출 TSV 파일을 찾지 못했습니다.');
   }
 
-  const rows = files.flatMap((file) => parseTsv(fs.readFileSync(file, 'utf8')).map((row) => ({ source: file, row })));
+  const rows = files.flatMap((file) => {
+    const parsed = parseTsv(fs.readFileSync(file, 'utf8'));
+    const headers = parsed.headers;
+    const missingColumns = REQUIRED_COLUMNS.filter((column) => !headers.includes(column));
+    if (missingColumns.length > 0) {
+      throw new Error(`${path.basename(file)} 필수 컬럼 누락: ${missingColumns.join(', ')}`);
+    }
+
+    const hasQuestionColumn = headers.includes('questionText') || headers.includes('question');
+    const hasAnswerColumn = headers.includes('answerText') || headers.includes('answer');
+    const hasPartColumn = headers.includes('partNo');
+    const hasChapterColumn = headers.includes('chapterNo');
+
+    if (!hasQuestionColumn || !hasAnswerColumn || !hasPartColumn || !hasChapterColumn) {
+      throw new Error(
+        `${path.basename(file)} 기출 TSV 형식이 올바르지 않습니다. partNo/chapterNo/questionText(or question)/answerText(or answer)가 필요합니다.`,
+      );
+    }
+
+    return parsed.rows.map((row) => ({ source: file, row }));
+  });
   const validation = validateAndTransform(rows);
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL?.trim();

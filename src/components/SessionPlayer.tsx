@@ -304,7 +304,7 @@ export function SessionPlayer({
       return '신고 대상을 찾지 못했습니다.';
     }
 
-    const payload = await submitIssueReport(user.id, current.id, reportType, result.resultStatus, detail);
+    const payload = await submitIssueReport(user.id, 'STUDY', current.id, reportType, result.resultStatus, detail);
     return payload.notice;
   }
 

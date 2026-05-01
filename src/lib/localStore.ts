@@ -115,6 +115,10 @@ export function getLocalIssueReports(userId: string) {
   );
 }
 
+export function getAllLocalIssueReports() {
+  return readJsonWithLegacyFallback<IssueReport[]>(ISSUE_REPORTS_KEY, LEGACY_ISSUE_REPORTS_KEY, []);
+}
+
 export function setLocalIssueReports(reports: IssueReport[]) {
   writeJson(ISSUE_REPORTS_KEY, reports);
 }

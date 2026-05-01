@@ -4,6 +4,7 @@ import { summarizeAnswerInput } from '../lib/answerImages';
 import { gradeExamAnswer } from '../lib/examGrading';
 import { listLatestExamWrongAttempts, loadLatestExamAttemptMap, recordExamAttempt } from '../lib/examAttempts';
 import { fetchExamQuestions, formatExamText } from '../lib/examQuestions';
+import { submitIssueReport } from '../lib/issueReports';
 import { useAuth } from '../lib/auth';
 import type { AnswerImage, ExamAttempt, ExamGradingPayload, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
 import { AnswerComposer } from './AnswerComposer';
@@ -308,6 +309,15 @@ export function ExamSessionPlayer({
     await submitAnswer('', []);
   }
 
+  async function handleReportIssue(reportType: 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT', detail?: string) {
+    if (!user || !current || !result) {
+      return '신고 대상을 찾지 못했습니다.';
+    }
+
+    const payload = await submitIssueReport(user.id, 'EXAM', current.id, reportType, result.resultStatus, detail);
+    return payload.notice;
+  }
+
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;
   }
@@ -389,6 +399,7 @@ export function ExamSessionPlayer({
           result={result}
           details={details}
           metadata={gradingMetadata}
+          onReportIssue={handleReportIssue}
           onNext={() => void loadQuestion(current.id)}
           onExit={() => navigate(mode === 'WRONG_NOTE' ? '/wrong-notes/exam' : '/exam-notes')}
         />
