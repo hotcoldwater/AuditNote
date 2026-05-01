@@ -17,6 +17,7 @@ import { AnswerComposer } from './AnswerComposer';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
+import { ExamReviewStatusBadge, ExamReviewTools } from './ExamReviewTools';
 import { RichTextContent } from './RichTextContent';
 import { styled } from '../styles/stitches.config';
 
@@ -277,6 +278,10 @@ export function ExamPaperPlayer({ year }: { year: string }) {
     }
   }
 
+  function handleReviewSaved(question: ExamQuestion) {
+    setQuestions((current) => current.map((item) => (item.id === question.id ? { ...item, ...question } : item)));
+  }
+
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;
   }
@@ -331,12 +336,17 @@ export function ExamPaperPlayer({ year }: { year: string }) {
           <QuestionCard>
             <QuestionTitle>
               <Title>{`${currentIndex + 1}번 문제`}</Title>
-              <Badge tone="primary">{`${currentIndex + 1} / ${questions.length}`}</Badge>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <ExamReviewStatusBadge reviewStatus={currentQuestion.review_status} />
+                <Badge tone="primary">{`${currentIndex + 1} / ${questions.length}`}</Badge>
+              </div>
             </QuestionTitle>
 
             <Body>
               <RichTextContent value={formatExamText(currentQuestion.question_text)} />
             </Body>
+
+            <ExamReviewTools question={currentQuestion} onSaved={handleReviewSaved} />
 
             <AnswerComposer
               answer={currentDraft?.userAnswer ?? ''}

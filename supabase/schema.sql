@@ -307,6 +307,9 @@ create table if not exists public.exam_questions (
   is_active boolean not null default true,
   check_status text not null default 'DRAFT',
   note text,
+  review_status text check (review_status in ('VERIFIED', 'NEEDS_REVIEW')),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -362,6 +365,29 @@ create policy "exam_questions_select_authenticated"
 on public.exam_questions
 for select
 using (auth.role() = 'authenticated');
+
+drop policy if exists "exam_questions_update_admin" on public.exam_questions;
+create policy "exam_questions_update_admin"
+on public.exam_questions
+for update
+using (
+  coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
+  or exists (
+    select 1
+    from public.profiles admin_profile
+    where admin_profile.id = auth.uid()
+      and admin_profile.is_admin = true
+  )
+)
+with check (
+  coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
+  or exists (
+    select 1
+    from public.profiles admin_profile
+    where admin_profile.id = auth.uid()
+      and admin_profile.is_admin = true
+  )
+);
 
 drop policy if exists "exam_attempts_select_own" on public.exam_attempts;
 create policy "exam_attempts_select_own"

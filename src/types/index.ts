@@ -3,6 +3,7 @@ export type GradingMethod = 'ai' | 'rule' | 'rule-fallback';
 export type WrongNoteStatus = 'WRONG' | 'REVIEW';
 export type IssueReportType = 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT';
 export type IssueReportSourceKind = 'STUDY' | 'EXAM';
+export type ExamReviewStatus = 'VERIFIED' | 'NEEDS_REVIEW';
 
 export type StudyMode = 'RANDOM' | 'PART' | 'SELECT' | 'WRONG_NOTE';
 
@@ -215,6 +216,9 @@ export interface ExamQuestion {
   is_active: boolean;
   check_status: string;
   note: string | null;
+  review_status: ExamReviewStatus | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
   created_at?: string;
   updated_at?: string;
 }

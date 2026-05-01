@@ -10,6 +10,7 @@ import type { AnswerImage, ExamAttempt, ExamGradingPayload, ExamQuestion, Gradin
 import { AnswerComposer } from './AnswerComposer';
 import { Button } from './Button';
 import { Card } from './Card';
+import { ExamReviewStatusBadge, ExamReviewTools } from './ExamReviewTools';
 import { ExamResultPanel } from './ExamResultPanel';
 import { RichTextContent } from './RichTextContent';
 import { styled } from '../styles/stitches.config';
@@ -318,6 +319,10 @@ export function ExamSessionPlayer({
     return payload.notice;
   }
 
+  function handleReviewSaved(question: ExamQuestion) {
+    setCurrent((existing) => (existing?.id === question.id ? { ...existing, ...question } : existing));
+  }
+
   if (authLoading) {
     return <Card>사용자 정보를 확인하는 중...</Card>;
   }
@@ -359,12 +364,15 @@ export function ExamSessionPlayer({
         <TitleRow>
           <LevelBox>{`문제 ${current.problem_no ?? '-'}`}</LevelBox>
           <Title>{current.section_title || '기출문제'}</Title>
+          <ExamReviewStatusBadge reviewStatus={current.review_status} />
           {latestAttempt?.result_status ? <HistoryBadge>{latestAttempt.result_status}</HistoryBadge> : null}
         </TitleRow>
 
         <QuestionBody>
           <RichTextContent value={formatExamText(current.question_text)} />
         </QuestionBody>
+
+        <ExamReviewTools question={current} onSaved={handleReviewSaved} />
 
         {!result ? (
           <>

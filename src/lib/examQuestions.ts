@@ -1,4 +1,4 @@
-import type { ExamQuestion, ExamYearOption } from '../types';
+import type { ExamQuestion, ExamReviewStatus, ExamYearOption } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { formatDetailedTextForDisplay } from './standardDisplay';
 
@@ -133,6 +133,18 @@ function normalizeExamQuestion(row: any): ExamQuestion {
     is_active: typeof row.is_active === 'boolean' ? row.is_active : true,
     check_status: String(row.check_status ?? row.checkStatus ?? 'DRAFT').trim() || 'DRAFT',
     note: String(row.note ?? '').trim() || null,
+    review_status:
+      String(row.review_status ?? row.reviewStatus ?? '')
+        .trim()
+        .toUpperCase() === 'VERIFIED'
+        ? 'VERIFIED'
+        : String(row.review_status ?? row.reviewStatus ?? '')
+              .trim()
+              .toUpperCase() === 'NEEDS_REVIEW'
+          ? 'NEEDS_REVIEW'
+          : null,
+    reviewed_at: typeof row.reviewed_at === 'string' ? row.reviewed_at : null,
+    reviewed_by: typeof row.reviewed_by === 'string' ? row.reviewed_by : null,
     created_at: typeof row.created_at === 'string' ? row.created_at : undefined,
     updated_at: typeof row.updated_at === 'string' ? row.updated_at : undefined,
   };
@@ -222,6 +234,48 @@ export async function fetchExamQuestionsByIds(ids: string[]) {
     ...payload,
     questions: payload.questions.filter((item) => uniqueIds.includes(item.id)),
   };
+}
+
+export async function updateExamQuestionReview(
+  questionId: string,
+  reviewStatus: ExamReviewStatus,
+  reviewerId: string,
+) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase가 설정되지 않아 검토결과를 저장할 수 없습니다.');
+  }
+
+  const { data, error } = await withTimeout(
+    supabase
+      .from('exam_questions')
+      .update({
+        review_status: reviewStatus,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId,
+      })
+      .eq('id', questionId)
+      .select('*')
+      .single(),
+    SUPABASE_TIMEOUT_MS,
+  );
+
+  if (error || !data) {
+    throw new Error(error?.message ?? '검토결과를 저장하지 못했습니다.');
+  }
+
+  return normalizeExamQuestion(data);
+}
+
+export function getExamReviewLabel(reviewStatus: ExamReviewStatus | null | undefined) {
+  if (reviewStatus === 'VERIFIED') {
+    return '검수완료';
+  }
+
+  if (reviewStatus === 'NEEDS_REVIEW') {
+    return '확인필요';
+  }
+
+  return null;
 }
 
 export function groupQuestionsByChapter(questions: ExamQuestion[]) {
