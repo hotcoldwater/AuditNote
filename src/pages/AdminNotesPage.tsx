@@ -96,9 +96,10 @@ export function AdminNotesPage() {
         setReports(items);
         setStandardsMap(Object.fromEntries(standardsPayload.standards.map((item) => [item.id, item])));
         setQuestionsMap(Object.fromEntries(examPayload.questions.map((item) => [item.id, item])));
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          setNotice('관리노트를 불러오는 중 오류가 발생했습니다.');
+          const message = error instanceof Error ? error.message.trim() : '';
+          setNotice(message ? `관리노트를 불러오는 중 오류가 발생했습니다. (${message})` : '관리노트를 불러오는 중 오류가 발생했습니다.');
         }
       } finally {
         if (!cancelled) {
@@ -159,7 +160,7 @@ export function AdminNotesPage() {
 
         {notice ? <Card>{notice}</Card> : null}
         {loading ? <Card>불러오는 중...</Card> : null}
-        {!loading && filteredReports.length === 0 ? <Card>접수된 신고가 없습니다.</Card> : null}
+        {!loading && !notice && filteredReports.length === 0 ? <Card>접수된 신고가 없습니다.</Card> : null}
 
         {!loading
           ? filteredReports.map((report) => {

@@ -162,12 +162,7 @@ on public.profiles
 for select
 using (
   auth.uid() = id
-  or exists (
-    select 1
-    from public.profiles admin_profile
-    where admin_profile.id = auth.uid()
-      and admin_profile.is_admin = true
-  )
+  or coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
 );
 
 drop policy if exists "profiles_insert_own" on public.profiles;
@@ -251,6 +246,7 @@ on public.issue_reports
 for select
 using (
   auth.uid() = user_id
+  or coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
   or exists (
     select 1
     from public.profiles admin_profile
@@ -270,7 +266,8 @@ create policy "issue_reports_update_admin"
 on public.issue_reports
 for update
 using (
-  exists (
+  coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
+  or exists (
     select 1
     from public.profiles admin_profile
     where admin_profile.id = auth.uid()
@@ -278,7 +275,8 @@ using (
   )
 )
 with check (
-  exists (
+  coalesce((auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean, false)
+  or exists (
     select 1
     from public.profiles admin_profile
     where admin_profile.id = auth.uid()
