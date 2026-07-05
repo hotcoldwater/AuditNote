@@ -406,8 +406,8 @@ export function RecordsPage() {
         ) : (
           <AnalysisGrid>
             <AnalysisSummary>
-              <strong style={{ color: 'var(--colors-primary)' }}>{`최근 7일 평균 ${Math.round(stats.recent7Days.reduce((sum, item) => sum + item.averageScore, 0) / Math.max(stats.recent7Days.length, 1))}점`}</strong>
-              <span style={{ color: 'var(--colors-mutedText)' }}>
+              <strong style={{ color: '#173d7a' }}>{`최근 7일 평균 ${Math.round(stats.recent7Days.reduce((sum, item) => sum + item.averageScore, 0) / Math.max(stats.recent7Days.length, 1))}점`}</strong>
+              <span style={{ color: '#6c7280' }}>
                 {stats.partProgress.some((item) => item.wrongRate >= 50)
                   ? '오답률이 높은 편을 먼저 복습하세요.'
                   : '최근 흐름은 안정적입니다.'}
@@ -448,7 +448,7 @@ export function RecordsPage() {
                 {stats.partProgress.map((item) => (
                   <div key={item.partNo} style={{ display: 'grid', gap: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                      <strong style={{ color: 'var(--colors-primary)', fontSize: 18 }}>{`${item.partNo}편`}</strong>
+                      <strong style={{ color: '#173d7a', fontSize: 18 }}>{`${item.partNo}편`}</strong>
                       <Badge tone={item.wrongRate >= 50 ? 'danger' : item.wrongRate >= 25 ? 'warning' : 'success'}>
                         {`오답률 ${item.wrongRate}%`}
                       </Badge>

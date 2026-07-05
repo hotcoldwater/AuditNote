@@ -384,7 +384,7 @@ export function StudySetupPage() {
 
             {selectedPartNo !== null && currentChapter ? (
               <ListCard>
-                <div style={{ color: 'var(--colors-subtleText)', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.label}`}</div>
+                <div style={{ color: '#6f7d90', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.label}`}</div>
                 <ListGrid>
                   {currentChapter.standards.map((standard, index) => {
                     const locationLines = getStandardLocationLines(standard);
@@ -399,7 +399,7 @@ export function StudySetupPage() {
                         }
                       >
                         <RowTop>
-                          <strong style={{ color: 'var(--colors-primary)', fontSize: 16, lineHeight: 1.5 }}>{`${index + 1}. ${standard.title}`}</strong>
+                          <strong style={{ color: '#173d7a', fontSize: 16, lineHeight: 1.5 }}>{`${index + 1}. ${standard.title}`}</strong>
                           <Chip>{`Lv${standard.level}`}</Chip>
                         </RowTop>
                         <ButtonMeta css={{ textAlign: 'left' }}>{locationLines[2] ?? currentChapter.label}</ButtonMeta>

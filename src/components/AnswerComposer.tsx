@@ -118,7 +118,7 @@ export function AnswerComposer({
             <ImageRow key={image.id}>
               <Preview src={image.dataUrl} alt={image.name} />
               <div style={{ display: 'grid', gap: 4 }}>
-                <strong style={{ color: 'var(--colors-primary)', fontSize: 14, lineHeight: 1.5 }}>{image.name}</strong>
+                <strong style={{ color: '#173d7a', fontSize: 14, lineHeight: 1.5 }}>{image.name}</strong>
                 <Helper>{answer.trim() ? '현재는 텍스트 답안이 우선 채점됩니다.' : '최종 제출 시 사진 답안을 인식합니다.'}</Helper>
               </div>
               <RemoveButton type="button" onClick={() => onImagesChange(answerImages.filter((item) => item.id !== image.id))}>

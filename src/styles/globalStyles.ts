@@ -13,7 +13,7 @@ export const globalStyles = globalCss({
   body: {
     margin: 0,
     background:
-      'radial-gradient(circle at top, rgba(207, 228, 215, 0.78), transparent 30%), linear-gradient(180deg, #ffffff 0%, $background 26%, #e7f2ea 100%)',
+      'radial-gradient(circle at top, rgba(200, 220, 255, 0.72), transparent 30%), linear-gradient(180deg, #ffffff 0%, $background 26%, #eef4fd 100%)',
     color: '$text',
     fontFamily: '$body',
     WebkitFontSmoothing: 'antialiased',
