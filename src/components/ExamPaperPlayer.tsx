@@ -394,9 +394,9 @@ export function ExamPaperPlayer({ year }: { year: string }) {
               <Badge tone={badgeTone(overview.score) as 'success' | 'primary' | 'warning' | 'danger'}>
                 {overview.resultStatus}
               </Badge>
-              <strong style={{ fontSize: 32, color: '#173d7a' }}>{overview.score}점</strong>
+              <strong style={{ fontSize: 32, color: 'var(--colors-primary)' }}>{overview.score}점</strong>
             </div>
-            <div style={{ color: '#5f6764', lineHeight: 1.7 }}>{overallSummary}</div>
+            <div style={{ color: 'var(--colors-mutedText)', lineHeight: 1.7 }}>{overallSummary}</div>
             {overallAdvice ? <div style={{ color: '#b93a3a', lineHeight: 1.7 }}>{overallAdvice}</div> : null}
           </div>
 
@@ -413,31 +413,31 @@ export function ExamPaperPlayer({ year }: { year: string }) {
                     <Badge tone={badgeTone(resultItem.scoring.score) as 'success' | 'primary' | 'warning' | 'danger'}>
                       {resultItem.scoring.resultStatus}
                     </Badge>
-                    <strong style={{ color: '#173d7a' }}>{`${resultItem.index}번 · ${resultItem.scoring.score}점`}</strong>
+                    <strong style={{ color: 'var(--colors-primary)' }}>{`${resultItem.index}번 · ${resultItem.scoring.score}점`}</strong>
                   </div>
-                  <div style={{ color: '#5f6764', lineHeight: 1.7 }}>{resultItem.details.summary}</div>
+                  <div style={{ color: 'var(--colors-mutedText)', lineHeight: 1.7 }}>{resultItem.details.summary}</div>
                   {detailLines(resultItem).length > 0 ? (
                     <div style={{ color: '#b93a3a', lineHeight: 1.7 }}>{detailLines(resultItem).join(' ')}</div>
                   ) : null}
                   <div style={{ display: 'grid', gap: 8 }}>
-                    <strong style={{ color: '#173d7a' }}>모범답안</strong>
+                    <strong style={{ color: 'var(--colors-primary)' }}>모범답안</strong>
                     <Body>
                       <RichTextContent value={formatExamText(resultItem.details.modelAnswer || question.answer_text)} />
                     </Body>
                   </div>
                   {question.explanation_text ? (
                     <div style={{ display: 'grid', gap: 8 }}>
-                      <strong style={{ color: '#173d7a' }}>해설</strong>
+                      <strong style={{ color: 'var(--colors-primary)' }}>해설</strong>
                       <Body>
                         <RichTextContent value={formatExamText(question.explanation_text)} />
                       </Body>
                     </div>
                   ) : null}
                   <div style={{ display: 'grid', gap: 8 }}>
-                    <strong style={{ color: '#173d7a' }}>내 답안</strong>
-                      <Body>
+                    <strong style={{ color: 'var(--colors-primary)' }}>내 답안</strong>
+                    <Body>
                       <RichTextContent value={formatExamText(summarizeDraftAnswer(resultItem.userAnswer, resultItem.answerImages))} />
-                      </Body>
+                    </Body>
                   </div>
                 </ResultItem>
               );

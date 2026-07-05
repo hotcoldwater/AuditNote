@@ -185,13 +185,13 @@ export function ResultPanel({
             style={{
               fontSize: 32,
               fontFamily: '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
-              color: '#173d7a',
+              color: 'var(--colors-primary)',
             }}
           >
             {result.score}점
           </strong>
         </div>
-        <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{result.reason}</span>
+        <span style={{ color: 'var(--colors-mutedText)', lineHeight: 1.7 }}>{result.reason}</span>
         {detailFeedback ? <span style={{ color: '#b93a3a', lineHeight: 1.7 }}>{detailFeedback}</span> : null}
         {result.shouldRecommendReview ? <Hint>복습 권장</Hint> : null}
         {metadata?.fallbackNotice ? <Hint>{metadata.fallbackNotice}</Hint> : null}

@@ -102,13 +102,13 @@ export function ExamResultPanel({
             style={{
               fontSize: 32,
               fontFamily: '"Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
-              color: '#173d7a',
+              color: 'var(--colors-primary)',
             }}
           >
             {result.score}점
           </strong>
         </div>
-        <span style={{ color: '#5f6764', lineHeight: 1.7 }}>{details.summary}</span>
+        <span style={{ color: 'var(--colors-mutedText)', lineHeight: 1.7 }}>{details.summary}</span>
         {detailLines.length > 0 ? <WarningText>{detailLines.join('\n')}</WarningText> : null}
         <Hint>{details.advice}</Hint>
         {metadata?.fallbackNotice ? <Hint>{metadata.fallbackNotice}</Hint> : null}

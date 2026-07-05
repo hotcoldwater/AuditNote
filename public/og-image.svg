@@ -1,16 +1,16 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="120" y1="60" x2="1080" y2="570" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F8FBFF"/>
-      <stop offset="1" stop-color="#E7F0FF"/>
+      <stop stop-color="#F4FAF5"/>
+      <stop offset="1" stop-color="#E3F0E7"/>
     </linearGradient>
     <linearGradient id="card" x1="280" y1="110" x2="920" y2="520" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#EFF5FF"/>
+      <stop offset="1" stop-color="#EEF6F0"/>
     </linearGradient>
     <linearGradient id="mark" x1="0" y1="0" x2="140" y2="140" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FDFEFF"/>
-      <stop offset="1" stop-color="#DCEAFF"/>
+      <stop offset="1" stop-color="#DCEFE4"/>
     </linearGradient>
     <filter id="shadow" x="230" y="70" width="740" height="490" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feFlood flood-opacity="0" result="BackgroundImageFix"/>

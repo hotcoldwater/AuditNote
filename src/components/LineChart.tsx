@@ -51,8 +51,8 @@ export function LineChart({
       <Svg viewBox={`0 0 ${width} ${height + 10}`} preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="records-line-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c8dcff" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#c8dcff" stopOpacity="0.08" />
+            <stop offset="0%" stopColor="var(--colors-secondarySoft)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="var(--colors-secondarySoft)" stopOpacity="0.08" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((ratio) => (
@@ -62,16 +62,16 @@ export function LineChart({
             x2={width}
             y1={height * ratio}
             y2={height * ratio}
-            stroke="#e3e2e1"
+            stroke="var(--colors-borderSoft)"
             strokeDasharray="2 4"
             strokeWidth="0.6"
           />
         ))}
         <path d={areaPath} fill="url(#records-line-fill)" />
-        <path d={linePath} fill="none" stroke="#2457a6" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={linePath} fill="none" stroke="var(--colors-primaryPanel)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((point) => (
           <g key={`${point.x}-${point.y}`}>
-            <circle cx={point.x} cy={point.y} r="2.7" fill="#ffffff" stroke="#2457a6" strokeWidth="1.8" />
+            <circle cx={point.x} cy={point.y} r="2.7" fill="#ffffff" stroke="var(--colors-primaryPanel)" strokeWidth="1.8" />
           </g>
         ))}
       </Svg>
@@ -79,7 +79,7 @@ export function LineChart({
         {data.map((item) => (
           <div key={item.label} style={{ display: 'grid', gap: 2 }}>
             <span>{item.label}</span>
-            {item.caption ? <strong style={{ color: '#173d7a', fontSize: 13 }}>{item.caption}</strong> : null}
+            {item.caption ? <strong style={{ color: 'var(--colors-primary)', fontSize: 13 }}>{item.caption}</strong> : null}
           </div>
         ))}
       </Labels>

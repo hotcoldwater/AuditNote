@@ -499,7 +499,7 @@ export function ExamNotesPage() {
 
             {selectedPartNo !== null && currentChapter ? (
               <ListCard>
-                <div style={{ color: '#6f7d90', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.chapterTitle || `${currentChapter.chapterNo}장`}`}</div>
+                <div style={{ color: 'var(--colors-subtleText)', fontSize: 13 }}>{`${selectedPartNo}편 · ${currentChapter.chapterTitle || `${currentChapter.chapterNo}장`}`}</div>
                 <ListGrid>
                   {currentChapter.questions.map((question, index) => {
                     const lastResultStatus = latestAttemptMap.get(question.id)?.result_status;
@@ -513,7 +513,7 @@ export function ExamNotesPage() {
                         }
                       >
                         <RowTop>
-                          <strong style={{ color: '#173d7a', fontSize: 16, lineHeight: 1.5 }}>
+                          <strong style={{ color: 'var(--colors-primary)', fontSize: 16, lineHeight: 1.5 }}>
                             {`${index + 1}. ${question.section_title || `문제 ${question.problem_no ?? '-'}`}`}
                           </strong>
                           <Chip>{question.exam_years[0] ? `${question.exam_years[0]}` : `Q${question.problem_no ?? '-'}`}</Chip>
