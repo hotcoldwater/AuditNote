@@ -1,12 +1,14 @@
 import type { AuthUser, IssueReport, StudyAttempt, UserStandardStats, WrongNote } from '../types';
 
 const DEMO_USER_KEY = 'auditnote:demo-user';
+const GUEST_USER_KEY = 'auditnote:guest-user';
 const ATTEMPTS_KEY = 'auditnote:attempts';
 const STATS_KEY = 'auditnote:stats';
 const WRONG_NOTES_KEY = 'auditnote:wrong-notes';
 const ISSUE_REPORTS_KEY = 'auditnote:issue-reports';
 
 const LEGACY_DEMO_USER_KEY = 'gamsanote:demo-user';
+const LEGACY_GUEST_USER_KEY = 'gamsanote:guest-user';
 const LEGACY_ATTEMPTS_KEY = 'gamsanote:attempts';
 const LEGACY_STATS_KEY = 'gamsanote:stats';
 const LEGACY_WRONG_NOTES_KEY = 'gamsanote:wrong-notes';
@@ -49,6 +51,8 @@ function getLegacyKey(key: string) {
   switch (key) {
     case DEMO_USER_KEY:
       return LEGACY_DEMO_USER_KEY;
+    case GUEST_USER_KEY:
+      return LEGACY_GUEST_USER_KEY;
     case ATTEMPTS_KEY:
       return LEGACY_ATTEMPTS_KEY;
     case STATS_KEY:
@@ -77,6 +81,29 @@ export function setDemoUser(user: AuthUser | null) {
   }
 
   writeJson(DEMO_USER_KEY, user);
+}
+
+export const GUEST_USER_ID = 'guest-user';
+
+export function isGuestUserId(userId: string) {
+  return userId === GUEST_USER_ID;
+}
+
+export function getGuestUser() {
+  return readJsonWithLegacyFallback<AuthUser | null>(GUEST_USER_KEY, LEGACY_GUEST_USER_KEY, null);
+}
+
+export function setGuestUser(user: AuthUser | null) {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  if (!user) {
+    window.localStorage.removeItem(GUEST_USER_KEY);
+    return;
+  }
+
+  writeJson(GUEST_USER_KEY, user);
 }
 
 export function getLocalAttempts(userId: string) {

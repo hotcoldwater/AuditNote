@@ -1,5 +1,5 @@
 import type { WrongNote, WrongNoteStatus } from '../types';
-import { getLocalWrongNotes, localStoreKeys, mergeLocalByUser } from './localStore';
+import { getLocalWrongNotes, isGuestUserId, localStoreKeys, mergeLocalByUser } from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 const SUPABASE_TIMEOUT_MS = 12000;
@@ -26,6 +26,10 @@ export async function listWrongNotes(
   includeResolved = false,
   statuses?: WrongNoteStatus[],
 ): Promise<WrongNote[]> {
+  if (isGuestUserId(userId)) {
+    return [];
+  }
+
   const statusSet = statuses?.length ? new Set(statuses) : null;
   const applyLocalFilter = (items: WrongNote[]) =>
     items
@@ -67,6 +71,10 @@ export async function upsertWrongNote(
   noteStatus: WrongNoteStatus,
   reason?: string,
 ) {
+  if (isGuestUserId(userId)) {
+    return null;
+  }
+
   const now = new Date().toISOString();
 
   if (!isSupabaseConfigured || !supabase) {
@@ -184,6 +192,10 @@ export async function upsertWrongNote(
 }
 
 export async function resolveWrongNote(userId: string, standardId: string) {
+  if (isGuestUserId(userId)) {
+    return;
+  }
+
   const now = new Date().toISOString();
 
   if (!isSupabaseConfigured || !supabase) {

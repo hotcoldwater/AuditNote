@@ -8,7 +8,8 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import type { AuthUser } from '../types';
-import { getDemoUser, setDemoUser } from './localStore';
+import { GUEST_USER_ID, getDemoUser, getGuestUser, setDemoUser, setGuestUser } from './localStore';
+import { getAuthCallbackUrl, getConfiguredSiteHostLabel } from './appUrl';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 interface AuthContextValue {
@@ -16,6 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   supabaseEnabled: boolean;
   usingDemo: boolean;
+  enterGuestMode: () => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
@@ -89,6 +91,7 @@ async function syncSession(session: Session | null) {
 function normalizeAuthErrorMessage(message: string | null | undefined) {
   const normalized = (message ?? '').trim();
   const lower = normalized.toLowerCase();
+  const siteHost = getConfiguredSiteHostLabel();
 
   if (!normalized) {
     return '인증 처리 중 오류가 발생했습니다.';
@@ -112,11 +115,11 @@ function normalizeAuthErrorMessage(message: string | null | undefined) {
     lower.includes('network request failed') ||
     lower.includes('load failed')
   ) {
-    return 'Supabase 인증 서버에 연결하지 못했습니다. 배포 환경변수와 auditnote.cc 도메인의 Supabase Redirect URL 설정을 확인해 주세요.';
+    return `Supabase 인증 서버에 연결하지 못했습니다. 배포 환경변수와 ${siteHost} 도메인의 Supabase Redirect URL 설정을 확인해 주세요.`;
   }
 
   if (lower.includes('invalid flow state') || lower.includes('flow state')) {
-    return '인증 상태가 올바르지 않습니다. auditnote.cc 도메인이 Supabase Redirect URL에 등록되어 있는지 확인해 주세요.';
+    return `인증 상태가 올바르지 않습니다. ${siteHost} 도메인이 Supabase Redirect URL에 등록되어 있는지 확인해 주세요.`;
   }
 
   return normalized;
@@ -127,6 +130,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const guestUser = getGuestUser();
+
+    if (guestUser?.isGuest) {
+      setUser(guestUser);
+      setLoading(false);
+      return;
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       setUser(getDemoUser());
       setLoading(false);
@@ -177,8 +188,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user,
       loading,
       supabaseEnabled: isSupabaseConfigured,
-      usingDemo: Boolean(user?.isDemo) || !isSupabaseConfigured,
+      usingDemo: Boolean(user?.isDemo || user?.isGuest) || !isSupabaseConfigured,
+      enterGuestMode() {
+        const guestUser: AuthUser = {
+          id: GUEST_USER_ID,
+          email: '',
+          nickname: '게스트',
+          isAdmin: false,
+          isGuest: true,
+        };
+        setDemoUser(null);
+        setGuestUser(guestUser);
+        setUser(guestUser);
+      },
       async signIn(email, password) {
+        setGuestUser(null);
         if (!isSupabaseConfigured || !supabase) {
           const demoUser: AuthUser = {
             id: 'demo-user',
@@ -196,6 +220,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return { error: error ? normalizeAuthErrorMessage(error.message) : null };
       },
       async signUp(email, password, nickname, fullName, birthDate, gender) {
+        setGuestUser(null);
         const trimmedNickname = nickname.trim();
         const trimmedFullName = fullName.trim();
         const trimmedBirthDate = birthDate.trim();
@@ -227,7 +252,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
               birth_date: trimmedBirthDate,
               gender: trimmedGender,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/confirmed`,
+            emailRedirectTo: getAuthCallbackUrl('/auth/confirmed'),
           },
         });
 
@@ -264,6 +289,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       async signOut() {
         setDemoUser(null);
+        setGuestUser(null);
         if (!isSupabaseConfigured || !supabase) {
           setUser(null);
           return;
@@ -280,6 +306,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         if (!user) {
           return { error: '로그인 상태를 다시 확인해 주세요.' };
+        }
+
+        if (user.isGuest) {
+          return { error: '게스트 모드에서는 개인정보를 저장할 수 없습니다.' };
         }
 
         if (!isSupabaseConfigured || !supabase || user.isDemo) {

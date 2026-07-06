@@ -11,6 +11,7 @@ import {
   getLocalAttempts,
   getLocalStats,
   getLocalWrongNotes,
+  isGuestUserId,
   localStoreKeys,
   mergeLocalByUser,
 } from './localStore';
@@ -305,6 +306,10 @@ async function syncDerivedDataForStandard(
 }
 
 export async function listStudyAttempts(userId: string): Promise<StudyAttempt[]> {
+  if (isGuestUserId(userId)) {
+    return [];
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     return sortAttempts(getLocalAttempts(userId));
   }
@@ -326,6 +331,10 @@ export async function listStudyAttempts(userId: string): Promise<StudyAttempt[]>
 }
 
 export async function listUserStandardStats(userId: string): Promise<UserStandardStats[]> {
+  if (isGuestUserId(userId)) {
+    return [];
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     return getLocalStats(userId);
   }
@@ -358,6 +367,13 @@ export async function recordStudyOutcome(
   gradingMetadata: GradingMetadata,
 ) {
   const attempt = buildAttempt(userId, standard.id, mode, userAnswer, scoring, gradingMetadata);
+  if (isGuestUserId(userId)) {
+    return {
+      attempt,
+      stats: null,
+      notice: '게스트 모드에서는 학습 기록과 오답노트가 저장되지 않습니다.',
+    };
+  }
   let notice: string | undefined;
 
   const localPersist = async (message: string) => {
@@ -436,6 +452,10 @@ export async function recordStudyOutcome(
 }
 
 export async function deleteStudyAttempt(userId: string, attemptId: string) {
+  if (isGuestUserId(userId)) {
+    return { success: false as const, notice: '게스트 모드에는 삭제할 저장 기록이 없습니다.' };
+  }
+
   const localDelete = async (message: string) => {
     const attempts = getLocalAttempts(userId);
     const target = attempts.find((item) => item.id === attemptId);
@@ -543,6 +563,10 @@ export async function deleteStudyAttempt(userId: string, attemptId: string) {
 }
 
 export async function clearStudyHistory(userId: string) {
+  if (isGuestUserId(userId)) {
+    return { success: true as const, notice: '게스트 모드에는 초기화할 저장 기록이 없습니다.' };
+  }
+
   const resetStats = (stats: UserStandardStats[]) =>
     stats.map((item) => ({
       ...zeroStat(item.user_id, item.standard_id),

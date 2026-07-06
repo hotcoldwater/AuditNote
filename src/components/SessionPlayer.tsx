@@ -296,7 +296,8 @@ export function SessionPlayer({
       return;
     }
 
-    await manuallyAddWrongNote(user.id, current.id);
+    const note = await manuallyAddWrongNote(user.id, current.id);
+    setSubmitNotice(note ? '오답노트에 추가했습니다.' : '게스트 모드에서는 오답노트가 저장되지 않습니다.');
   }
 
   async function handleReportIssue(reportType: 'QUESTION_AMBIGUOUS' | 'ANSWER_INCORRECT' | 'GRADING_INCORRECT', detail?: string) {

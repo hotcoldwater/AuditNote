@@ -1,4 +1,5 @@
 import type { ExamAttempt, ExamQuestion, GradingMetadata, ScoringResult } from '../types';
+import { isGuestUserId } from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 const EXAM_ATTEMPTS_KEY = 'auditnote.exam_attempts.v1';
@@ -69,6 +70,10 @@ function sortAttempts(attempts: ExamAttempt[]) {
 }
 
 export async function listExamAttempts(userId: string): Promise<ExamAttempt[]> {
+  if (isGuestUserId(userId)) {
+    return [];
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     return sortAttempts(getLocalAttempts(userId));
   }
@@ -142,6 +147,10 @@ export async function recordExamAttempt(
   }
 
   const attempt = buildAttempt(userId, question, userAnswer, scoring, gradingMetadata);
+
+  if (isGuestUserId(userId)) {
+    return { attempt, notice: '게스트 모드에서는 기출 기록이 저장되지 않습니다.' };
+  }
 
   const persistLocal = (message: string) => {
     setLocalAttempts(userId, sortAttempts([...getLocalAttempts(userId), attempt]));

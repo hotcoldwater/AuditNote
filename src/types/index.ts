@@ -149,6 +149,7 @@ export interface AuthUser {
   gender?: string | null;
   isAdmin?: boolean;
   isDemo?: boolean;
+  isGuest?: boolean;
 }
 
 export interface PartProgressItem {

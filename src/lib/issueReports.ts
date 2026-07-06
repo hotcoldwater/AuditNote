@@ -1,5 +1,12 @@
 import type { IssueReport, IssueReportSourceKind, IssueReportType, ResultStatus } from '../types';
-import { getAllLocalIssueReports, getLocalIssueReports, localStoreKeys, mergeLocalByUser, setLocalIssueReports } from './localStore';
+import {
+  getAllLocalIssueReports,
+  getLocalIssueReports,
+  isGuestUserId,
+  localStoreKeys,
+  mergeLocalByUser,
+  setLocalIssueReports,
+} from './localStore';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 const SUPABASE_TIMEOUT_MS = 12000;
@@ -39,6 +46,10 @@ export async function submitIssueReport(
     resolved_by: null,
     created_at: new Date().toISOString(),
   };
+
+  if (isGuestUserId(userId)) {
+    return { report: payload, notice: '게스트 모드에서는 신고 내용이 저장되지 않습니다.' };
+  }
 
   if (!isSupabaseConfigured || !supabase) {
     mergeLocalByUser(localStoreKeys.ISSUE_REPORTS_KEY, userId, [...getLocalIssueReports(userId), payload]);

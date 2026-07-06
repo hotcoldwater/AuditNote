@@ -128,7 +128,7 @@ const ErrorText = styled('div', {
 });
 
 export function LoginPage() {
-  const { user, loading, signIn, supabaseEnabled } = useAuth();
+  const { user, loading, signIn, supabaseEnabled, enterGuestMode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -201,6 +201,17 @@ export function LoginPage() {
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button type="submit" disabled={submitting}>
             {supabaseEnabled ? '로그인' : '샘플 모드 시작'}
+          </Button>
+          <Button
+            type="button"
+            tone="secondary"
+            disabled={submitting}
+            onClick={() => {
+              enterGuestMode();
+              navigate('/', { replace: true });
+            }}
+          >
+            로그인 없이 접속
           </Button>
         </Form>
 

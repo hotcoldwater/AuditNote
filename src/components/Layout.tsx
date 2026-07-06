@@ -201,7 +201,7 @@ export function Layout({
           </NavGroup>
           <ProfileLink to="/settings" aria-label="개인정보설정">
             <Badge tone={usingDemo ? 'warning' : 'primary'}>
-              {usingDemo ? user?.nickname ?? '샘플 모드' : user?.nickname ?? '로그인'}
+              {user?.isGuest ? '게스트 모드' : usingDemo ? user?.nickname ?? '샘플 모드' : user?.nickname ?? '로그인'}
             </Badge>
           </ProfileLink>
         </TopBarInner>

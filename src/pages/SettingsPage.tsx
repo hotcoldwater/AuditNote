@@ -57,6 +57,11 @@ export function SettingsPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (user?.isGuest) {
+      setError(null);
+      setNotice('게스트 모드에서는 개인정보를 저장할 수 없습니다.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setNotice(null);
@@ -87,11 +92,11 @@ export function SettingsPage() {
               />
             </Field>
             <div style={{ color: '#777777', fontSize: 13, lineHeight: 1.7 }}>
-              {user?.email}
+              {user?.isGuest ? '게스트 모드에서는 로그인 없이 둘러볼 수 있지만 기록과 설정은 저장되지 않습니다.' : user?.email}
             </div>
             {notice ? <Notice style={{ color: '#2f5d50' }}>{notice}</Notice> : null}
             {error ? <Notice style={{ color: '#b93a3a' }}>{error}</Notice> : null}
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting || user?.isGuest}>
               {submitting ? '저장 중...' : '닉네임 저장'}
             </Button>
           </form>
