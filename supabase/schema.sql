@@ -179,10 +179,11 @@ using (auth.uid() = id)
 with check (auth.uid() = id);
 
 drop policy if exists "standards_select_authenticated" on public.standards;
-create policy "standards_select_authenticated"
+drop policy if exists "standards_select_public" on public.standards;
+create policy "standards_select_public"
 on public.standards
 for select
-using (auth.role() = 'authenticated');
+using (auth.role() in ('authenticated', 'anon'));
 
 drop policy if exists "study_attempts_select_own" on public.study_attempts;
 create policy "study_attempts_select_own"
@@ -361,10 +362,11 @@ alter table public.exam_questions enable row level security;
 alter table public.exam_attempts enable row level security;
 
 drop policy if exists "exam_questions_select_authenticated" on public.exam_questions;
-create policy "exam_questions_select_authenticated"
+drop policy if exists "exam_questions_select_public" on public.exam_questions;
+create policy "exam_questions_select_public"
 on public.exam_questions
 for select
-using (auth.role() = 'authenticated');
+using (auth.role() in ('authenticated', 'anon'));
 
 drop policy if exists "exam_questions_update_admin" on public.exam_questions;
 create policy "exam_questions_update_admin"
